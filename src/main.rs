@@ -1,6 +1,10 @@
-use game_of_life as gol;
+
+use game_of_life::{Game};
+
+
+
 
 fn main() {
-    let board = gol::Board::new(600,600);
+    let game = Game::new(&[false; 600 * 600],600).unwrap();
     println!("Hello, world!");
 }
