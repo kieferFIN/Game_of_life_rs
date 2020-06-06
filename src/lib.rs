@@ -48,14 +48,13 @@ impl<D: DataType> Grid<D> {
         v
     }
 
-    fn print(&self){
-        for (i,v) in self.data.iter().enumerate() {
-            print!("{}",v.get_char());
-            if (i+1) % self.width as usize  == 0{
+    fn print(&self) {
+        for (i, v) in self.data.iter().enumerate() {
+            print!("{}", v.get_char());
+            if (i + 1) % self.width as usize == 0 {
                 print!("\n");
             }
         }
-
     }
 }
 
@@ -80,11 +79,11 @@ pub struct Game<D, R> {
     rules: R,
 }
 
-struct Coord{
-    width:u32,
-    height:u32,
-    x:u32,
-    y:u32,
+struct Coord {
+    width: u32,
+    height: u32,
+    x: u32,
+    y: u32,
 }
 
 impl Iterator for Coord {
@@ -126,7 +125,7 @@ impl<D, R> Game<D, R>
         for coord in self.get_coord() {
             let (r, g, b, a) = self.grid[coord].get_color();
             screen.set_color(r, g, b, a);
-            screen.fill_rect(Rect::new(coord.0*size.0 as i32, coord.1*size.1 as i32, size.0, size.1));
+            screen.fill_rect(Rect::new(coord.0 * size.0 as i32, coord.1 * size.1 as i32, size.0, size.1));
         }
     }
 
@@ -134,7 +133,7 @@ impl<D, R> Game<D, R>
         self.grid.print();
     }
 
-    fn get_coord(&self) ->Coord{
-        Coord{width:self.grid.width , height:self.grid.height, x:0,y:0}
+    fn get_coord(&self) -> Coord {
+        Coord { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
     }
 }
