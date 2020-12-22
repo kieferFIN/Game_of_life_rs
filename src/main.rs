@@ -96,10 +96,6 @@ impl DataType for BoolHist {
 }
 
 struct ClassicHistory {}
-//**************************************************************
-
-
-
 
 impl RuleSet<BoolHist> for ClassicHistory {
     fn next(&self, source: &[&BoolHist]) -> BoolHist {
@@ -121,6 +117,66 @@ impl RuleSet<BoolHist> for ClassicHistory {
         3
     }
 }
+
+//**************************************************************
+
+#[derive(Clone, Copy)]
+struct ColorData {
+    r: bool,
+    g: bool,
+    b: bool,
+}
+
+impl RandomInit for ColorData {
+    fn rnd() -> Self {
+        ColorData { r: rand::random::<bool>(), g: rand::random::<bool>(), b: rand::random::<bool>() }
+    }
+}
+
+impl DataType for ColorData{
+    fn get_color(&self) -> (u8, u8, u8, u8) {
+        (self.r as u8 * 255,self.g as u8 * 255,self.b as u8 * 255, 255)
+    }
+
+    fn get_char(&self) -> char {
+        if self.r {
+            '*'
+        }else {
+            ' '
+        }
+    }
+}
+
+struct ColorRules{}
+
+impl RuleSet<ColorData> for ColorRules{
+    fn next(&self, source: &[&ColorData]) -> ColorData {
+        let me = source[4];
+        let all = source.iter().fold((0,0,0), |acc, d| (acc.0+d.r as i8, acc.1+d.g as i8, acc.2+d.b as i8) );
+        let neighbours = (all.0 - me.r as i8, all.1 - me.g as i8, all.2 - me.b as i8);
+
+        let r = match (me.r, neighbours.0) {
+            (true, 2) | (_, 3) => true,
+            _ => false
+        };
+        let g = match (me.g, neighbours.1) {
+            (true, 2) | (_, 3) => true,
+            _ => false
+        };
+        let b = match (me.b, neighbours.2) {
+            (true, 2) | (_, 3) => true,
+            _ => false
+        };
+
+        ColorData{r,g,b}
+    }
+
+    fn source_size(&self) -> u8 {
+        3
+    }
+}
+
+//**************************************************************
 
 struct MyEventHandler<D, R> {
     game: Game<D, R>,
@@ -147,7 +203,7 @@ impl<D, R> EventHandler for MyEventHandler<D, R>
     where D: DataType,
           R: RuleSet<D> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.game.next_step();
+        //self.game.next_step();
         self. fps = graphics::Text::new(format!("{:.2}",timer::fps(ctx)));
         Ok(())
     }
@@ -176,8 +232,8 @@ impl<D, R> EventHandler for MyEventHandler<D, R>
 fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const SIZE: (u32, u32) = (160, 120);
-    let rules = ClassicConeway {};
+    const SIZE: (u32, u32) = (400, 300);
+    let rules = ColorRules {};
 
     let (mut ctx, mut event_loop) =
         ContextBuilder::new("Game of Life", "Eero")
