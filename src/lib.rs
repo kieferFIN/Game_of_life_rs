@@ -1,33 +1,36 @@
 use std::ops::{Index, IndexMut};
+use std::sync::Arc;
+use std::thread;
 
 type IndexType = (i32, i32);
 
 
-pub trait RuleSet<D> {
-    fn next(&self, source: &[&D]) -> D;
-    fn source_size(&self) -> u8;
+pub trait RuleSet {
+    type Data:DataType;
+    fn next(source: &[&Self::Data]) -> Self::Data;
+    fn source_size() -> u8;
 }
 
-pub trait DataType: Clone {
+pub trait DataType: Clone + Send + Sync +'static {
     fn get_color(&self) -> (u8, u8, u8, u8);
     fn get_char(&self) -> char;
 }
 
 #[derive(Clone)]
 struct Grid<D> {
-    width: u32,
-    height: u32,
+    width: u16,
+    height: u16,
     data: Vec<D>,
 }
 
 impl<D: DataType> Grid<D> {
-    pub fn init_with_data(init_data: &[D], width: u32) -> Option<Grid<D>> {
+    pub fn init_with_data(init_data: &[D], width: u16) -> Option<Grid<D>> {
         let size = init_data.len();
         let uw = width as usize;
         if size % uw != 0 {
             None
         } else {
-            Some(Grid { width, height: (size / uw) as u32, data: init_data.to_vec() })
+            Some(Grid { width, height: (size / uw) as u16, data: init_data.to_vec() })
         }
     }
 
@@ -56,6 +59,10 @@ impl<D: DataType> Grid<D> {
             }
         }
     }
+
+    fn get_raw_data(&self) -> &Vec<D> {
+        &self.data
+    }
 }
 
 impl<D: DataType> Index<IndexType> for Grid<D> {
@@ -74,20 +81,20 @@ impl<D: DataType> IndexMut<IndexType> for Grid<D> {
 }
 
 
-pub struct Game<D, R> {
-    grid: Grid<D>,
-    rules: R,
+pub struct Game<R>
+    where R: RuleSet {
+    grid: Grid<R::Data>
 }
 
 struct CoordIter {
-    width: u32,
-    height: u32,
-    x: u32,
-    y: u32,
+    width: u16,
+    height: u16,
+    x: u16,
+    y: u16,
 }
 
 impl Iterator for CoordIter {
-    type Item = (i32, i32);
+    type Item = IndexType;
 
     fn next(&mut self) -> Option<Self::Item> {
         let o_x = self.x as i32;
@@ -106,19 +113,10 @@ impl Iterator for CoordIter {
     }
 }
 
-impl<D, R> Game<D, R>
-    where D: DataType,
-          R: RuleSet<D> {
-    pub fn init_with_data(init_data: &[D], width: u32, rules: R) -> Option<Game<D, R>> {
-        Grid::init_with_data(init_data, width).map_or(None, |grid| Some(Game { grid, rules }))
-    }
-
-    pub fn next_step(&mut self) {
-        let grid_copy = self.grid.clone();
-        for coord in self.get_coord_iter() {
-            let area = grid_copy.get_area(coord, self.rules.source_size());
-            self.grid[coord] = self.rules.next(area.as_slice());
-        }
+impl <R> Game<R>
+    where R: RuleSet{
+    pub fn init_with_data(init_data: &[R::Data], width: u16) -> Option<Game<R>> {
+        Grid::init_with_data(init_data, width).map_or(None, |grid| Some(Game { grid}))
     }
 
     pub fn print(&self) {
@@ -128,33 +126,63 @@ impl<D, R> Game<D, R>
     fn get_coord_iter(&self) -> CoordIter {
         CoordIter { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
     }
+
+    pub fn next_step(&mut self) {
+        const NUMBER_OF_THREADS:u16 = 4;
+        let grid_copy = Arc::new(self.grid.clone());
+        let mut handles = vec![];
+        let height = self.grid.height;
+        let width = self.grid.width;
+        let source_size = R::source_size();
+        for index in 0..NUMBER_OF_THREADS{
+            let y_start = index * height/NUMBER_OF_THREADS;
+            let y_end = (index+1) * height/NUMBER_OF_THREADS;
+            let grid_copy = Arc::clone(&grid_copy);
+            let handle = thread::spawn( move ||{
+                let iter = CoordIter{width, height:y_end, x:0, y:y_start};
+                let mut v = Vec::with_capacity(((y_end-y_start)*width) as usize);
+                for c in iter{
+                    let area = grid_copy.get_area(c,source_size);
+                    v.push((c,R::next(area.as_slice())));
+                }
+                v
+            });
+            handles.push(handle);
+        }
+        for h in handles{
+            for (c,v) in h.join().unwrap(){
+                self.grid[c] = v;
+            }
+        }
+    }
 }
 
-impl<'a,D,R> IntoIterator for &'a Game<D,R>
-    where D: DataType,
-          R: RuleSet<D>{
-    type Item = (IndexType,D);
-    type IntoIter = GameIter<'a,D>;
+impl<'a,R> IntoIterator for &'a Game<R>
+    where R: RuleSet{
+    type Item = (IndexType,&'a R::Data);
+    type IntoIter = GameIter<'a,R::Data>;
 
     fn into_iter(self) -> Self::IntoIter {
-        GameIter{coord: self.get_coord_iter(), grid: &self.grid }
+        GameIter{coord: self.get_coord_iter(), data: &self.grid.get_raw_data(), i:0 }
     }
 }
 
 pub struct GameIter<'a,D>{
     coord: CoordIter,
-    grid: &'a Grid<D>
+    data: &'a Vec<D>,
+    i: usize
 }
 
 impl<'a,D> Iterator for GameIter<'a,D>
     where D:DataType{
 
-    type Item = (IndexType,D);
+    type Item = (IndexType,&'a D);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.coord.next().map(|c|{
-            let data = self.grid[c].clone();
-            (c,data)
+            let i = self.i;
+            self.i +=1 ;
+            (c,&self.data[i])
         })
     }
 }

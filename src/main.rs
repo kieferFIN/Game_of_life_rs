@@ -14,8 +14,10 @@ trait RandomInit {
 
 struct ClassicConeway {}
 
-impl RuleSet<BoolData> for ClassicConeway {
-    fn next(&self, source: &[&BoolData]) -> BoolData {
+impl RuleSet for ClassicConeway {
+    type Data = BoolData;
+
+    fn next(source: &[&BoolData]) -> BoolData {
         let me = source[4].value;
         let all: i32 = source.iter().map(|x| x.value as i32).sum();
         let neighbours = all - me as i32;
@@ -26,7 +28,7 @@ impl RuleSet<BoolData> for ClassicConeway {
         }
     }
 
-    fn source_size(&self) -> u8 {
+    fn source_size() -> u8 {
         3
     }
 }
@@ -97,8 +99,10 @@ impl DataType for BoolHist {
 
 struct ClassicHistory {}
 
-impl RuleSet<BoolHist> for ClassicHistory {
-    fn next(&self, source: &[&BoolHist]) -> BoolHist {
+impl RuleSet for ClassicHistory {
+    type Data = BoolHist;
+
+    fn next(source: &[&BoolHist]) -> BoolHist {
         let me = source[4];
         let all: i32 = source.iter().map(|x| x.current as i32).sum();
         let neighbours = all - me.current as i32;
@@ -113,7 +117,7 @@ impl RuleSet<BoolHist> for ClassicHistory {
         BoolHist { current, history }
     }
 
-    fn source_size(&self) -> u8 {
+    fn source_size() -> u8 {
         3
     }
 }
@@ -149,8 +153,10 @@ impl DataType for ColorData{
 
 struct ColorRules{}
 
-impl RuleSet<ColorData> for ColorRules{
-    fn next(&self, source: &[&ColorData]) -> ColorData {
+impl RuleSet for ColorRules{
+    type Data = ColorData;
+
+    fn next(source: &[&ColorData]) -> ColorData {
         let me = source[4];
         let all = source.iter().fold((0,0,0), |acc, d| (acc.0+d.r as i8, acc.1+d.g as i8, acc.2+d.b as i8) );
         let neighbours = (all.0 - me.r as i8, all.1 - me.g as i8, all.2 - me.b as i8);
@@ -171,39 +177,40 @@ impl RuleSet<ColorData> for ColorRules{
         ColorData{r,g,b}
     }
 
-    fn source_size(&self) -> u8 {
+    fn source_size() -> u8 {
         3
     }
 }
 
 //**************************************************************
 
-struct MyEventHandler<D, R> {
-    game: Game<D, R>,
-    game_size: (u32, u32),
+struct MyEventHandler<R>
+    where R: RuleSet {
+    game: Game<R>,
+    game_size: (u16, u16),
     fps: graphics::Text,
 }
 
-impl<D, R> MyEventHandler<D, R>
-    where D: DataType + RandomInit,
-          R: RuleSet<D> {
-    fn new(ctx: &mut Context, game_size: (u32, u32), rules: R) -> GameResult<MyEventHandler<D, R>> {
-        let total_size = (game_size.0 * game_size.1) as usize;
+impl<R> MyEventHandler<R>
+    where R: RuleSet,
+          R::Data: RandomInit {
+    fn new(ctx: &mut Context, game_size: (u16, u16)) -> GameResult<MyEventHandler<R>> {
+        let total_size = game_size.0 as usize * game_size.1 as usize;
+        println!("{}", total_size);
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
-            data.push(D::rnd())
+            data.push(R::Data::rnd())
         };
         graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
-        let game = Game::init_with_data(&data, game_size.0, rules).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
+        let game = Game::init_with_data(&data, game_size.0).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
         Ok(MyEventHandler { game, game_size, fps: graphics::Text::new("") })
     }
 }
 
-impl<D, R> EventHandler for MyEventHandler<D, R>
-    where D: DataType,
-          R: RuleSet<D> {
+impl< R> EventHandler for MyEventHandler< R>
+    where R: RuleSet {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        //self.game.next_step();
+        self.game.next_step();
         self. fps = graphics::Text::new(format!("{:.2}",timer::fps(ctx)));
         Ok(())
     }
@@ -222,6 +229,7 @@ impl<D, R> EventHandler for MyEventHandler<D, R>
         let mesh = mb.build(ctx)?;
         graphics::clear(ctx, graphics::BLACK);
         graphics::draw(ctx, &mesh, DrawParam::default())?;
+
         graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
         graphics::present(ctx)?;
         Ok(())
@@ -232,15 +240,14 @@ impl<D, R> EventHandler for MyEventHandler<D, R>
 fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const SIZE: (u32, u32) = (400, 300);
-    let rules = ColorRules {};
+    const SIZE: (u16, u16) = (200, 150);
 
     let (mut ctx, mut event_loop) =
         ContextBuilder::new("Game of Life", "Eero")
             .window_mode(WindowMode { width: WIDTH as f32, height: HEIGHT as f32, ..Default::default() })
             .build().unwrap();
 
-    let mut handler = MyEventHandler::new(&mut ctx, SIZE, rules).unwrap();
+    let mut handler = MyEventHandler::<ColorRules>::new(&mut ctx, SIZE).unwrap();
     match run(&mut ctx, &mut event_loop, &mut handler) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occurred: {}", e)
