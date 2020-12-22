@@ -21,7 +21,7 @@ struct Grid<D> {
 }
 
 impl<D: DataType> Grid<D> {
-    pub fn init(init_data: &[D], width: u32) -> Option<Grid<D>> {
+    pub fn init_with_data(init_data: &[D], width: u32) -> Option<Grid<D>> {
         let size = init_data.len();
         let uw = width as usize;
         if size % uw != 0 {
@@ -109,8 +109,8 @@ impl Iterator for CoordIter {
 impl<D, R> Game<D, R>
     where D: DataType,
           R: RuleSet<D> {
-    pub fn new(init_data: &[D], width: u32, rules: R) -> Option<Game<D, R>> {
-        Grid::init(init_data, width).map_or(None, |grid| Some(Game { grid, rules }))
+    pub fn init_with_data(init_data: &[D], width: u32, rules: R) -> Option<Game<D, R>> {
+        Grid::init_with_data(init_data, width).map_or(None, |grid| Some(Game { grid, rules }))
     }
 
     pub fn next_step(&mut self) {

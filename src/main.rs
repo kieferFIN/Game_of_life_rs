@@ -1,8 +1,16 @@
 use game_of_life::{Game, RuleSet, DataType};
-use simple::{Window, Event, Key, Rect};
-use std::time::Duration;
 use std::collections::VecDeque;
+use ggez::{ContextBuilder, Context, GameResult, GameError};
+use ggez::conf::WindowMode;
+use ggez::event::{EventHandler, run};
+use ggez::{graphics, timer};
+use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder};
+use ggez::nalgebra::Point2;
 
+
+trait RandomInit {
+    fn rnd() -> Self;
+}
 
 struct ClassicConeway {}
 
@@ -28,7 +36,7 @@ struct BoolData {
     value: bool
 }
 
-impl BoolData {
+impl RandomInit for BoolData {
     fn rnd() -> BoolData {
         BoolData { value: rand::random::<bool>() }
     }
@@ -59,10 +67,10 @@ struct BoolHist {
     history: VecDeque<bool>,
 }
 
-impl BoolHist {
+impl RandomInit for BoolHist {
     fn rnd() -> BoolHist {
         BoolHist {
-            history: VecDeque::from(vec![false; 10]),
+            history: VecDeque::from(vec![false; 5]),
             current: rand::random::<bool>(),
         }
     }
@@ -74,7 +82,7 @@ impl DataType for BoolHist {
             (255, 255, 255, 255)
         } else {
             let s: i32 = self.history.iter().map(|x| *x as i32).sum();
-            let gray = (s * 15) as u8;
+            let gray = (s * 40) as u8;
             (gray, gray, gray, 255)
         }
     }
@@ -88,6 +96,10 @@ impl DataType for BoolHist {
 }
 
 struct ClassicHistory {}
+//**************************************************************
+
+
+
 
 impl RuleSet<BoolHist> for ClassicHistory {
     fn next(&self, source: &[&BoolHist]) -> BoolHist {
@@ -110,38 +122,71 @@ impl RuleSet<BoolHist> for ClassicHistory {
     }
 }
 
+struct MyEventHandler<D, R> {
+    game: Game<D, R>,
+    game_size: (u32, u32),
+    fps: graphics::Text,
+}
+
+impl<D, R> MyEventHandler<D, R>
+    where D: DataType + RandomInit,
+          R: RuleSet<D> {
+    fn new(ctx: &mut Context, game_size: (u32, u32), rules: R) -> GameResult<MyEventHandler<D, R>> {
+        let total_size = (game_size.0 * game_size.1) as usize;
+        let mut data = Vec::with_capacity(total_size);
+        for _ in 0..total_size {
+            data.push(D::rnd())
+        };
+        graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
+        let game = Game::init_with_data(&data, game_size.0, rules).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
+        Ok(MyEventHandler { game, game_size, fps: graphics::Text::new("") })
+    }
+}
+
+impl<D, R> EventHandler for MyEventHandler<D, R>
+    where D: DataType,
+          R: RuleSet<D> {
+    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+        self.game.next_step();
+        self. fps = graphics::Text::new(format!("{:.2}",timer::fps(ctx)));
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let mut mb = MeshBuilder::new();
+
+        for (c, d) in &self.game {
+            let (r, g, b, a) = d.get_color();
+            mb.rectangle(
+                DrawMode::fill(),
+                Rect::new_i32(c.0, c.1, 1, 1),
+                Color::from_rgba(r, g, b, a),
+            );
+        };
+        let mesh = mb.build(ctx)?;
+        graphics::clear(ctx, graphics::BLACK);
+        graphics::draw(ctx, &mesh, DrawParam::default())?;
+        graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
+        graphics::present(ctx)?;
+        Ok(())
+    }
+}
+
 
 fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const NUMBERS: (u32, u32) = (160, 120);
-    const TOTAL: usize = (NUMBERS.0 * NUMBERS.1) as usize;
-    const SIZE: (u32, u32) = (WIDTH / NUMBERS.0, HEIGHT / NUMBERS.1);
-    let mut init_data = Vec::with_capacity(TOTAL);
-    for _ in 0..TOTAL {
-        init_data.push(BoolHist::rnd());
-    }
-    let rules = ClassicHistory {};
-    let mut game = Game::new(&init_data, NUMBERS.0, rules).unwrap();
-    let mut screen = Window::new("Game of life", WIDTH as u16, HEIGHT as u16);
+    const SIZE: (u32, u32) = (160, 120);
+    let rules = ClassicConeway {};
 
+    let (mut ctx, mut event_loop) =
+        ContextBuilder::new("Game of Life", "Eero")
+            .window_mode(WindowMode { width: WIDTH as f32, height: HEIGHT as f32, ..Default::default() })
+            .build().unwrap();
 
-    while screen.next_frame() {
-        while screen.has_event() {
-            match screen.next_event() {
-                Event::Keyboard { is_down: true, key: Key::Escape } => screen.quit(),
-                _ => ()
-            }
-        }
-        screen.clear();
-        //game.draw(&mut screen, SIZE);
-        for (c,d) in &game{
-            let(r,g,b,a) = d.get_color();
-            screen.set_color(r,g,b,a);
-            screen.fill_rect(Rect::new(c.0 * SIZE.0 as i32, c.1 * SIZE.1 as i32, SIZE.0, SIZE.1));
-        }
-        game.next_step();
-
-        std::thread::sleep(Duration::from_millis(50));
+    let mut handler = MyEventHandler::new(&mut ctx, SIZE, rules).unwrap();
+    match run(&mut ctx, &mut event_loop, &mut handler) {
+        Ok(_) => println!("Exited cleanly."),
+        Err(e) => println!("Error occurred: {}", e)
     }
 }
