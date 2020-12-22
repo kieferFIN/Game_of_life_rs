@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
-use simple::{Window, Rect};
 
 type IndexType = (i32, i32);
+
 
 pub trait RuleSet<D> {
     fn next(&self, source: &[&D]) -> D;
@@ -79,14 +79,14 @@ pub struct Game<D, R> {
     rules: R,
 }
 
-struct Coord {
+struct CoordIter {
     width: u32,
     height: u32,
     x: u32,
     y: u32,
 }
 
-impl Iterator for Coord {
+impl Iterator for CoordIter {
     type Item = (i32, i32);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -113,19 +113,11 @@ impl<D, R> Game<D, R>
         Grid::init(init_data, width).map_or(None, |grid| Some(Game { grid, rules }))
     }
 
-    pub fn next(&mut self) {
+    pub fn next_step(&mut self) {
         let grid_copy = self.grid.clone();
-        for coord in self.get_coord() {
+        for coord in self.get_coord_iter() {
             let area = grid_copy.get_area(coord, self.rules.source_size());
             self.grid[coord] = self.rules.next(area.as_slice());
-        }
-    }
-
-    pub fn draw(&self, screen: &mut Window, size: (u32, u32)) {
-        for coord in self.get_coord() {
-            let (r, g, b, a) = self.grid[coord].get_color();
-            screen.set_color(r, g, b, a);
-            screen.fill_rect(Rect::new(coord.0 * size.0 as i32, coord.1 * size.1 as i32, size.0, size.1));
         }
     }
 
@@ -133,7 +125,36 @@ impl<D, R> Game<D, R>
         self.grid.print();
     }
 
-    fn get_coord(&self) -> Coord {
-        Coord { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
+    fn get_coord_iter(&self) -> CoordIter {
+        CoordIter { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
+    }
+}
+
+impl<'a,D,R> IntoIterator for &'a Game<D,R>
+    where D: DataType,
+          R: RuleSet<D>{
+    type Item = (IndexType,D);
+    type IntoIter = GameIter<'a,D>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GameIter{coord: self.get_coord_iter(), grid: &self.grid }
+    }
+}
+
+pub struct GameIter<'a,D>{
+    coord: CoordIter,
+    grid: &'a Grid<D>
+}
+
+impl<'a,D> Iterator for GameIter<'a,D>
+    where D:DataType{
+
+    type Item = (IndexType,D);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.coord.next().map(|c|{
+            let data = self.grid[c].clone();
+            (c,data)
+        })
     }
 }

@@ -1,5 +1,5 @@
 use game_of_life::{Game, RuleSet, DataType};
-use simple::{Window, Event, Key};
+use simple::{Window, Event, Key, Rect};
 use std::time::Duration;
 use std::collections::VecDeque;
 
@@ -134,8 +134,13 @@ fn main() {
             }
         }
         screen.clear();
-        game.draw(&mut screen, SIZE);
-        game.next();
+        //game.draw(&mut screen, SIZE);
+        for (c,d) in &game{
+            let(r,g,b,a) = d.get_color();
+            screen.set_color(r,g,b,a);
+            screen.fill_rect(Rect::new(c.0 * SIZE.0 as i32, c.1 * SIZE.1 as i32, SIZE.0, SIZE.1));
+        }
+        game.next_step();
 
         std::thread::sleep(Duration::from_millis(50));
     }
