@@ -197,12 +197,13 @@ impl<R> MyEventHandler<R>
           R::Data: RandomInit {
     fn new(ctx: &mut Context, game_size: (u16, u16)) -> GameResult<MyEventHandler<R>> {
         let total_size = game_size.0 as usize * game_size.1 as usize;
-        println!("{}", total_size);
+        //println!("{}", total_size);
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
             data.push(R::Data::rnd())
         };
-        //graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
+        graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
+        graphics::set_default_filter(ctx, graphics::FilterMode::Nearest);
         let game = Game::init_with_data(&data, game_size.0).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
         Ok(MyEventHandler { game, game_size, fps: graphics::Text::new("") })
     }
@@ -239,7 +240,7 @@ impl< R> EventHandler for MyEventHandler< R>
 fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const SIZE: (u16, u16) = (800, 600);
+    const SIZE: (u16, u16) = (400, 300);
 
     let (mut ctx, mut event_loop) =
         ContextBuilder::new("Game of Life", "Eero")
