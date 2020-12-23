@@ -4,7 +4,7 @@ use ggez::{ContextBuilder, Context, GameResult, GameError};
 use ggez::conf::WindowMode;
 use ggez::event::{EventHandler, run};
 use ggez::{graphics, timer};
-use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder};
+use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder, Image};
 use ggez::nalgebra::Point2;
 use std::time::Instant;
 
@@ -202,7 +202,7 @@ impl<R> MyEventHandler<R>
         for _ in 0..total_size {
             data.push(R::Data::rnd())
         };
-        graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
+        //graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
         let game = Game::init_with_data(&data, game_size.0).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
         Ok(MyEventHandler { game, game_size, fps: graphics::Text::new("") })
     }
@@ -217,20 +217,18 @@ impl< R> EventHandler for MyEventHandler< R>
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let mut mb = MeshBuilder::new();
-
-        for (c, d) in &self.game {
+        let mut v = Vec::with_capacity(self.game_size.0 as usize * self.game_size.1 as usize);
+        for (_,d) in &self.game{
             let (r, g, b, a) = d.get_color();
-            mb.rectangle(
-                DrawMode::fill(),
-                Rect::new_i32(c.0, c.1, 1, 1),
-                Color::from_rgba(r, g, b, a),
-            );
-        };
-        let mesh = mb.build(ctx)?;
-        graphics::clear(ctx, graphics::BLACK);
-        graphics::draw(ctx, &mesh, DrawParam::default())?;
+            v.push(r);
+            v.push(g);
+            v.push(b);
+            v.push(a);
+        }
+        let img = Image::from_rgba8(ctx,self.game_size.0,self.game_size.1,&v)?;
 
+        graphics::clear(ctx, graphics::BLACK);
+        graphics::draw(ctx, &img,DrawParam::default())?;
         graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
         graphics::present(ctx)?;
         Ok(())
@@ -242,7 +240,7 @@ fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
     const SIZE: (u16, u16) = (800, 600);
-/*
+
     let (mut ctx, mut event_loop) =
         ContextBuilder::new("Game of Life", "Eero")
             .window_mode(WindowMode { width: WIDTH as f32, height: HEIGHT as f32, ..Default::default() })
@@ -253,14 +251,14 @@ fn main() {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occurred: {}", e)
     }
-    */
+
 
     let total_size = SIZE.0 as usize * SIZE.1 as usize;
     let mut vec = Vec::with_capacity(total_size);
     for _ in 0..total_size{
         vec.push(ColorData::rnd());
     };
-
+/*
     let mut game = Game::<ColorRules>::init_with_data(&vec, SIZE.0).unwrap();
     let start = Instant::now();
     for _ in 0..100{
@@ -268,5 +266,5 @@ fn main() {
     }
     let end = Instant::now();
     println!("{:?}", end.duration_since(start));
-
+*/
 }
