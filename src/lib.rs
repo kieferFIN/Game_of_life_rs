@@ -16,6 +16,10 @@ pub trait DataType: Clone + Send + Sync +'static {
     fn get_char(&self) -> char;
 }
 
+pub trait RandomInit {
+    fn rnd() -> Self;
+}
+
 #[derive(Clone)]
 struct Grid<D> {
     width: u16,
@@ -118,6 +122,19 @@ impl Iterator for CoordIter {
             }
             Some((o_x, o_y))
         }
+    }
+}
+
+impl <R> Game<R>
+    where R:RuleSet,
+          R::Data: RandomInit {
+    pub fn init_random(game_size:(u16,u16)) -> Option<Game<R>>{
+        let total_size = game_size.0 as usize * game_size.1 as usize;
+        let mut data = Vec::with_capacity(total_size);
+        for _ in 0..total_size {
+            data.push(R::Data::rnd())
+        };
+        Game::init_with_data(&data, game_size.0)
     }
 }
 

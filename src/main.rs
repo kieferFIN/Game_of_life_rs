@@ -1,17 +1,14 @@
-use game_of_life::{Game, RuleSet, DataType};
+use game_of_life::{Game, RuleSet, DataType, RandomInit};
 use std::collections::VecDeque;
 use ggez::{ContextBuilder, Context, GameResult, GameError};
 use ggez::conf::WindowMode;
-use ggez::event::{EventHandler, run};
-use ggez::{graphics, timer};
+use ggez::event::{EventHandler, KeyCode, run};
+use ggez::{graphics, timer, event};
 use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder, Image};
 use ggez::nalgebra::Point2;
 use std::time::Instant;
+use ggez::input::keyboard::KeyMods;
 
-
-trait RandomInit {
-    fn rnd() -> Self;
-}
 
 struct ClassicConeway {}
 
@@ -138,28 +135,28 @@ impl RandomInit for ColorData {
     }
 }
 
-impl DataType for ColorData{
+impl DataType for ColorData {
     fn get_color(&self) -> (u8, u8, u8, u8) {
-        (self.r as u8 * 255,self.g as u8 * 255,self.b as u8 * 255, 255)
+        (self.r as u8 * 255, self.g as u8 * 255, self.b as u8 * 255, 255)
     }
 
     fn get_char(&self) -> char {
         if self.r {
             '*'
-        }else {
+        } else {
             ' '
         }
     }
 }
 
-struct ColorRules{}
+struct ColorRules {}
 
-impl RuleSet for ColorRules{
+impl RuleSet for ColorRules {
     type Data = ColorData;
 
     fn next(source: &[&ColorData]) -> ColorData {
         let me = source[4];
-        let all = source.iter().fold((0,0,0), |acc, d| (acc.0+d.r as i8, acc.1+d.g as i8, acc.2+d.b as i8) );
+        let all = source.iter().fold((0, 0, 0), |acc, d| (acc.0 + d.r as i8, acc.1 + d.g as i8, acc.2 + d.b as i8));
         let neighbours = (all.0 - me.r as i8, all.1 - me.g as i8, all.2 - me.b as i8);
 
         let r = match (me.r, neighbours.0) {
@@ -175,7 +172,7 @@ impl RuleSet for ColorRules{
             _ => false
         };
 
-        ColorData{r,g,b}
+        ColorData { r, g, b }
     }
 
     fn source_size() -> u8 {
@@ -190,49 +187,63 @@ struct MyEventHandler<R>
     game: Game<R>,
     game_size: (u16, u16),
     fps: graphics::Text,
+    is_pause: bool,
+    show_fps: bool,
 }
 
 impl<R> MyEventHandler<R>
     where R: RuleSet,
           R::Data: RandomInit {
     fn new(ctx: &mut Context, game_size: (u16, u16)) -> GameResult<MyEventHandler<R>> {
-        let total_size = game_size.0 as usize * game_size.1 as usize;
-        //println!("{}", total_size);
-        let mut data = Vec::with_capacity(total_size);
-        for _ in 0..total_size {
-            data.push(R::Data::rnd())
-        };
         graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game_size.0 as i32, game_size.1 as i32))?;
         graphics::set_default_filter(ctx, graphics::FilterMode::Nearest);
-        let game = Game::init_with_data(&data, game_size.0).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
-        Ok(MyEventHandler { game, game_size, fps: graphics::Text::new("") })
+        let game = Game::init_random(game_size).ok_or(GameError::ConfigError("wrong params for game init".into()))?;
+        Ok(MyEventHandler { game, game_size, fps: graphics::Text::new(""), is_pause: false, show_fps: false })
     }
 }
 
-impl< R> EventHandler for MyEventHandler< R>
-    where R: RuleSet {
+impl<R> EventHandler for MyEventHandler<R>
+    where R: RuleSet,
+          R::Data: RandomInit {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.game.next_step();
-        self. fps = graphics::Text::new(format!("{:.2}",timer::fps(ctx)));
+        if !self.is_pause {
+            self.game.next_step();
+        }
+        if self.show_fps {
+            self.fps = graphics::Text::new(format!("{:.2}", timer::fps(ctx)));
+        }
+
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         let mut v = Vec::with_capacity(self.game_size.0 as usize * self.game_size.1 as usize);
-        for (_,d) in &self.game{
+        for (_, d) in &self.game {
             let (r, g, b, a) = d.get_color();
             v.push(r);
             v.push(g);
             v.push(b);
             v.push(a);
         }
-        let img = Image::from_rgba8(ctx,self.game_size.0,self.game_size.1,&v)?;
+        let img = Image::from_rgba8(ctx, self.game_size.0, self.game_size.1, &v)?;
 
         graphics::clear(ctx, graphics::BLACK);
-        graphics::draw(ctx, &img,DrawParam::default())?;
-        graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
+        graphics::draw(ctx, &img, DrawParam::default())?;
+        if self.show_fps {
+            graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
+        }
         graphics::present(ctx)?;
         Ok(())
+    }
+
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+        match keycode {
+            KeyCode::Space => self.is_pause ^= true,
+            KeyCode::Escape => event::quit(ctx),
+            KeyCode::Return => self.game = Game::init_random(self.game_size).unwrap(),
+            KeyCode::F => self.show_fps ^= true,
+            _ => ()
+        }
     }
 }
 
@@ -256,16 +267,16 @@ fn main() {
 
     let total_size = SIZE.0 as usize * SIZE.1 as usize;
     let mut vec = Vec::with_capacity(total_size);
-    for _ in 0..total_size{
+    for _ in 0..total_size {
         vec.push(ColorData::rnd());
     };
-/*
-    let mut game = Game::<ColorRules>::init_with_data(&vec, SIZE.0).unwrap();
-    let start = Instant::now();
-    for _ in 0..100{
-        game.next_step();
-    }
-    let end = Instant::now();
-    println!("{:?}", end.duration_since(start));
-*/
+    /*
+        let mut game = Game::<ColorRules>::init_with_data(&vec, SIZE.0).unwrap();
+        let start = Instant::now();
+        for _ in 0..100{
+            game.next_step();
+        }
+        let end = Instant::now();
+        println!("{:?}", end.duration_since(start));
+    */
 }
