@@ -45,7 +45,8 @@ impl<D: DataType> Grid<D> {
         let half_size = (size / 2) as i32;
         for h in y - half_size..=y + half_size {
             for w in x - half_size..=x + half_size {
-                v.push(self.index((w, h)));
+                let (x,y) = self.wrap((w,h));
+                v.push(&self.data[y * (self.width as usize) + x]);
             }
         }
         v
@@ -63,19 +64,26 @@ impl<D: DataType> Grid<D> {
     fn get_raw_data(&self) -> &Vec<D> {
         &self.data
     }
+    fn get_raw_mut_data(&mut self) -> &mut Vec<D> {
+        &mut self.data
+    }
 }
 
 impl<D: DataType> Index<IndexType> for Grid<D> {
     type Output = D;
     fn index(&self, index: IndexType) -> &Self::Output {
-        let (x, y) = self.wrap(index);
+        //let (x, y) = self.wrap(index);
+        let x = index.0 as usize;
+        let y = index.1 as usize;
         &self.data[y * (self.width as usize) + x]
     }
 }
 
 impl<D: DataType> IndexMut<IndexType> for Grid<D> {
     fn index_mut(&mut self, index: IndexType) -> &mut Self::Output {
-        let (x, y) = self.wrap(index);
+        //let (x, y) = self.wrap(index);
+        let x = index.0 as usize;
+        let y = index.1 as usize;
         &mut self.data[y * (self.width as usize) + x]
     }
 }
@@ -83,7 +91,7 @@ impl<D: DataType> IndexMut<IndexType> for Grid<D> {
 
 pub struct Game<R>
     where R: RuleSet {
-    grid: Grid<R::Data>
+    grid: Grid<R::Data>,
 }
 
 struct CoordIter {
@@ -143,16 +151,19 @@ impl <R> Game<R>
                 let mut v = Vec::with_capacity(((y_end-y_start)*width) as usize);
                 for c in iter{
                     let area = grid_copy.get_area(c,source_size);
-                    v.push((c,R::next(area.as_slice())));
+                    v.push(R::next(area.as_slice()));
                 }
-                v
+                (y_start,y_end,v)
             });
             handles.push(handle);
         }
+        let data = self.grid.get_raw_mut_data();
         for h in handles{
-            for (c,v) in h.join().unwrap(){
-                self.grid[c] = v;
-            }
+            let (start,end,v) = h.join().unwrap();
+            let start = start as usize * width as usize;
+            let end = end as usize * width as usize;
+            data[start..end].clone_from_slice(&v)
+
         }
     }
 }

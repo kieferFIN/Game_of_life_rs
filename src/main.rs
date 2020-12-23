@@ -6,6 +6,7 @@ use ggez::event::{EventHandler, run};
 use ggez::{graphics, timer};
 use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder};
 use ggez::nalgebra::Point2;
+use std::time::Instant;
 
 
 trait RandomInit {
@@ -33,7 +34,7 @@ impl RuleSet for ClassicConeway {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct BoolData {
     value: bool
 }
@@ -124,7 +125,7 @@ impl RuleSet for ClassicHistory {
 
 //**************************************************************
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct ColorData {
     r: bool,
     g: bool,
@@ -240,8 +241,8 @@ impl< R> EventHandler for MyEventHandler< R>
 fn main() {
     const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const SIZE: (u16, u16) = (200, 150);
-
+    const SIZE: (u16, u16) = (800, 600);
+/*
     let (mut ctx, mut event_loop) =
         ContextBuilder::new("Game of Life", "Eero")
             .window_mode(WindowMode { width: WIDTH as f32, height: HEIGHT as f32, ..Default::default() })
@@ -252,4 +253,20 @@ fn main() {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occurred: {}", e)
     }
+    */
+
+    let total_size = SIZE.0 as usize * SIZE.1 as usize;
+    let mut vec = Vec::with_capacity(total_size);
+    for _ in 0..total_size{
+        vec.push(ColorData::rnd());
+    };
+
+    let mut game = Game::<ColorRules>::init_with_data(&vec, SIZE.0).unwrap();
+    let start = Instant::now();
+    for _ in 0..100{
+        game.next_step();
+    }
+    let end = Instant::now();
+    println!("{:?}", end.duration_since(start));
+
 }
