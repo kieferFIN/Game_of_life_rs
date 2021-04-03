@@ -11,8 +11,13 @@ pub trait RuleSet {
     fn source_size() -> u8;
 }
 
-pub trait DataType: Clone + Send + Sync +'static {
+pub trait DataType: Clone + Send + Sync +'static {}
+
+pub trait ColoredDataType: DataType{
     fn get_color(&self) -> (u8, u8, u8, u8);
+}
+
+pub trait PrintableDataType: DataType{
     fn get_char(&self) -> char;
 }
 
@@ -56,6 +61,15 @@ impl<D: DataType> Grid<D> {
         v
     }
 
+    fn get_raw_data(&self) -> &Vec<D> {
+        &self.data
+    }
+    fn get_raw_mut_data(&mut self) -> &mut Vec<D> {
+        &mut self.data
+    }
+}
+
+impl <D: PrintableDataType> Grid<D>{
     fn print(&self) {
         for (i, v) in self.data.iter().enumerate() {
             print!("{}", v.get_char());
@@ -63,13 +77,6 @@ impl<D: DataType> Grid<D> {
                 print!("\n");
             }
         }
-    }
-
-    fn get_raw_data(&self) -> &Vec<D> {
-        &self.data
-    }
-    fn get_raw_mut_data(&mut self) -> &mut Vec<D> {
-        &mut self.data
     }
 }
 
@@ -144,10 +151,6 @@ impl <R> Game<R>
         Grid::init_with_data(init_data, width).map_or(None, |grid| Some(Game { grid}))
     }
 
-    pub fn print(&self) {
-        self.grid.print();
-    }
-
     fn get_coord_iter(&self) -> CoordIter {
         CoordIter { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
     }
@@ -182,6 +185,15 @@ impl <R> Game<R>
             data[start..end].clone_from_slice(&v)
 
         }
+    }
+}
+
+impl<R> Game<R>
+    where R: RuleSet,
+          R::Data: PrintableDataType {
+
+    pub fn print(&self) {
+        self.grid.print();
     }
 }
 

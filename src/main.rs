@@ -1,13 +1,13 @@
-use game_of_life::{Game, RuleSet, DataType, RandomInit};
-use std::collections::VecDeque;
+use game_of_life::{Game, RuleSet, DataType, RandomInit, ColoredDataType, PrintableDataType};
 use ggez::{ContextBuilder, Context, GameResult, GameError};
 use ggez::conf::WindowMode;
 use ggez::event::{EventHandler, KeyCode, run};
 use ggez::{graphics, timer, event};
-use ggez::graphics::{Color, DrawMode, Rect, DrawParam, MeshBuilder, Image};
+use ggez::graphics::{Rect, DrawParam, Image};
 use ggez::nalgebra::Point2;
 use std::time::Instant;
 use ggez::input::keyboard::KeyMods;
+use std::collections::VecDeque;
 
 
 struct ClassicConeway {}
@@ -36,13 +36,15 @@ struct BoolData {
     value: bool
 }
 
+impl DataType for BoolData{}
+
 impl RandomInit for BoolData {
     fn rnd() -> BoolData {
         BoolData { value: rand::random::<bool>() }
     }
 }
 
-impl DataType for BoolData {
+impl ColoredDataType for BoolData {
     fn get_color(&self) -> (u8, u8, u8, u8) {
         if self.value {
             (255, 255, 255, 255)
@@ -50,7 +52,9 @@ impl DataType for BoolData {
             (0, 0, 0, 255)
         }
     }
+}
 
+impl PrintableDataType for BoolData{
     fn get_char(&self) -> char {
         if self.value {
             '*'
@@ -76,7 +80,9 @@ impl RandomInit for BoolHist {
     }
 }
 
-impl DataType for BoolHist {
+impl DataType for BoolHist {}
+
+impl ColoredDataType for BoolHist {
     fn get_color(&self) -> (u8, u8, u8, u8) {
         if self.current {
             (255, 255, 255, 255)
@@ -84,13 +90,6 @@ impl DataType for BoolHist {
             let s: i32 = self.history.iter().map(|x| *x as i32).sum();
             let gray = (s * 40) as u8;
             (gray, gray, gray, 255)
-        }
-    }
-    fn get_char(&self) -> char {
-        if self.current {
-            '*'
-        } else {
-            '_'
         }
     }
 }
@@ -119,9 +118,7 @@ impl RuleSet for ClassicHistory {
         3
     }
 }
-
 //**************************************************************
-
 #[derive(Clone)]
 struct ColorData {
     r: bool,
@@ -135,17 +132,11 @@ impl RandomInit for ColorData {
     }
 }
 
-impl DataType for ColorData {
+impl DataType for ColorData {}
+
+impl ColoredDataType for ColorData {
     fn get_color(&self) -> (u8, u8, u8, u8) {
         (self.r as u8 * 255, self.g as u8 * 255, self.b as u8 * 255, 255)
-    }
-
-    fn get_char(&self) -> char {
-        if self.r {
-            '*'
-        } else {
-            ' '
-        }
     }
 }
 
@@ -204,7 +195,7 @@ impl<R> MyEventHandler<R>
 
 impl<R> EventHandler for MyEventHandler<R>
     where R: RuleSet,
-          R::Data: RandomInit {
+          R::Data: RandomInit + ColoredDataType {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         if !self.is_pause {
             self.game.next_step();
@@ -217,7 +208,7 @@ impl<R> EventHandler for MyEventHandler<R>
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let mut v = Vec::with_capacity(self.game_size.0 as usize * self.game_size.1 as usize);
+        let mut v = Vec::with_capacity(self.game_size.0 as usize * self.game_size.1 as usize * 4);
         for (_, d) in &self.game {
             let (r, g, b, a) = d.get_color();
             v.push(r);
@@ -264,19 +255,4 @@ fn main() {
         Err(e) => println!("Error occurred: {}", e)
     }
 
-
-    let total_size = SIZE.0 as usize * SIZE.1 as usize;
-    let mut vec = Vec::with_capacity(total_size);
-    for _ in 0..total_size {
-        vec.push(ColorData::rnd());
-    };
-    /*
-        let mut game = Game::<ColorRules>::init_with_data(&vec, SIZE.0).unwrap();
-        let start = Instant::now();
-        for _ in 0..100{
-            game.next_step();
-        }
-        let end = Instant::now();
-        println!("{:?}", end.duration_since(start));
-    */
 }
