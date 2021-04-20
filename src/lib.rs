@@ -2,6 +2,12 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
 
+#[cfg(feature = "ggez")]
+use crate::ggez_graphics::run;
+
+#[cfg(feature = "ggez")]
+mod ggez_graphics;
+
 type IndexType = (i32, i32);
 
 
@@ -129,7 +135,7 @@ impl Iterator for CoordIter {
             }
             Some((o_x, o_y))
         }
-    }
+    } 
 }
 
 impl <R> Game<R>
@@ -204,6 +210,16 @@ impl<'a,R> IntoIterator for &'a Game<R>
 
     fn into_iter(self) -> Self::IntoIter {
         GameIter{coord: self.get_coord_iter(), data: &self.grid.get_raw_data(), i:0 }
+    }
+}
+
+impl<R> Game<R>
+    where R: RuleSet,
+    R::Data: ColoredDataType{
+
+    #[cfg(feature = "ggez")]
+    pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),String>{
+        run(window_size,self)
     }
 }
 
