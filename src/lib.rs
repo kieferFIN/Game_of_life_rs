@@ -2,11 +2,12 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
 
-#[cfg(feature = "ggez")]
-use crate::ggez_graphics::run;
 
 #[cfg(feature = "ggez")]
 mod ggez_graphics;
+
+#[cfg(feature = "piston")]
+mod piston_graphics;
 
 type IndexType = (i32, i32);
 
@@ -135,7 +136,7 @@ impl Iterator for CoordIter {
             }
             Some((o_x, o_y))
         }
-    } 
+    }
 }
 
 impl <R> Game<R>
@@ -219,7 +220,26 @@ impl<R> Game<R>
 
     #[cfg(feature = "ggez")]
     pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),String>{
-        run(window_size,self)
+        ggez_graphics::run(window_size,self)
+    }
+
+    #[cfg(feature = "piston")]
+    pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),String>{
+        piston_graphics::run(window_size,self)
+    }
+
+    pub fn to_raw_colors(&self) -> Vec<u8>{
+        let capacity = self.grid.width as usize * self.grid.height as usize * 4;
+        let mut v = Vec::with_capacity(capacity);
+        for (_,d) in self.into_iter(){
+            let (r, g, b, a) = d.get_color();
+            v.push(r);
+            v.push(g);
+            v.push(b);
+            v.push(a);
+
+        };
+        v
     }
 }
 

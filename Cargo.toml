@@ -9,3 +9,12 @@ edition = "2018"
 [dependencies]
 ggez = {version="0.5", optional=true}
 rand = "0.8"
+piston ={version="0.53", optional=true}
+piston2d-graphics = {version="0.40", optional=true}
+pistoncore-glutin_window = {version="0.69", optional=true}
+piston2d-opengl_graphics = {version="0.78", optional=true}
+image = {version = "0.23", optional=true}
+
+[features]
+graphics-ggez = ["ggez"]
+graphics-piston = ["piston","piston2d-graphics", "pistoncore-glutin_window","piston2d-opengl_graphics","image"]

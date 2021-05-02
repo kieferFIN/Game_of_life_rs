@@ -7,7 +7,7 @@ use ggez::{graphics, timer, event};
 use ggez::graphics::{Rect, DrawParam, Image};
 use ggez::nalgebra::Point2;
 
-use crate::{RuleSet, Game, RandomInit, ColoredDataType};
+use crate::{RuleSet, Game, ColoredDataType};
 
 
 pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), String>
@@ -52,15 +52,7 @@ impl<'a, R> EventHandler for MyEventHandler<'a, R>
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let mut v = Vec::with_capacity(self.game.grid.width as usize * self.game.grid.height as usize * 4);
-        for (_, d) in self.game.into_iter() {
-            let (r, g, b, a) = d.get_color();
-            v.push(r);
-            v.push(g);
-            v.push(b);
-            v.push(a);
-        }
-        let img = Image::from_rgba8(ctx, self.game.grid.width, self.game.grid.height, &v)?;
+        let img = Image::from_rgba8(ctx, self.game.grid.width, self.game.grid.height, &self.game.to_raw_colors())?;
 
         graphics::clear(ctx, graphics::BLACK);
         graphics::draw(ctx, &img, DrawParam::default())?;
