@@ -7,17 +7,17 @@ use ggez::{graphics, timer, event};
 use ggez::graphics::{Rect, DrawParam, Image};
 use ggez::nalgebra::Point2;
 
-use crate::{RuleSet, Game, ColoredDataType};
+use crate::{RuleSet, Game, ColoredDataType, GError};
 
 
-pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), String>
+pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), GError>
     where R: RuleSet,
           R::Data: ColoredDataType {
     let (mut ctx, mut event_loop) = ContextBuilder::new("Game of Life", "Eero")
         .window_mode(WindowMode { width: window_size.0 as f32, height: window_size.1 as f32, ..Default::default() })
         .build().unwrap();
     let mut handler = MyEventHandler::<R>::new(&mut ctx, game).unwrap();
-    ggez_run(&mut ctx, &mut event_loop, &mut handler).map_err(|e| e.to_string())
+    ggez_run(&mut ctx, &mut event_loop, &mut handler).map_err(|e| GError::GgezError {source:e})
 }
 
 struct MyEventHandler<'a, R>

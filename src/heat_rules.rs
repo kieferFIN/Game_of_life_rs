@@ -1,4 +1,4 @@
-use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet};
+use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, Color};
 
 #[derive(Clone)]
 pub struct HeatData {
@@ -9,7 +9,7 @@ pub struct HeatData {
 impl DataType for HeatData {}
 
 impl ColoredDataType for HeatData {
-    fn get_color(&self) -> (u8, u8, u8, u8) {
+    fn get_color(&self) -> Color {
         if self.value<0.5 {
             let v = (self.value*2.0*255.0) as u8;
             (v,v,0,255)

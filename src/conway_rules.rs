@@ -1,4 +1,4 @@
-use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, PrintableDataType};
+use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, PrintableDataType, Color};
 use std::collections::VecDeque;
 
 pub struct ClassicConway {}
@@ -36,7 +36,7 @@ impl RandomInit for BoolData {
 }
 
 impl ColoredDataType for BoolData {
-    fn get_color(&self) -> (u8, u8, u8, u8) {
+    fn get_color(&self) -> Color {
         if self.value {
             (255, 255, 255, 255)
         } else {
@@ -76,7 +76,7 @@ impl RandomInit for BoolHist {
 impl DataType for BoolHist {}
 
 impl ColoredDataType for BoolHist {
-    fn get_color(&self) -> (u8, u8, u8, u8) {
+    fn get_color(&self) -> Color{
         if self.current {
             (255, 255, 255, 255)
         } else {
@@ -129,7 +129,7 @@ impl RandomInit for ColorData {
 impl DataType for ColorData {}
 
 impl ColoredDataType for ColorData {
-    fn get_color(&self) -> (u8, u8, u8, u8) {
+    fn get_color(&self) -> Color {
         (self.r as u8 * 255, self.g as u8 * 255, self.b as u8 * 255, 255)
     }
 }

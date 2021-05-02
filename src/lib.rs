@@ -1,7 +1,9 @@
 use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
+pub use crate::error_handling::GError;
 
+mod error_handling;
 
 #[cfg(feature = "ggez")]
 mod ggez_graphics;
@@ -10,6 +12,8 @@ mod ggez_graphics;
 mod piston_graphics;
 
 type IndexType = (i32, i32);
+
+pub type Color = (u8,u8, u8, u8);
 
 
 pub trait RuleSet {
@@ -21,7 +25,7 @@ pub trait RuleSet {
 pub trait DataType: Clone + Send + Sync +'static {}
 
 pub trait ColoredDataType: DataType{
-    fn get_color(&self) -> (u8, u8, u8, u8);
+    fn get_color(&self) -> Color;
 }
 
 pub trait PrintableDataType: DataType{
@@ -40,13 +44,13 @@ struct Grid<D> {
 }
 
 impl<D: DataType> Grid<D> {
-    pub fn init_with_data(init_data: &[D], width: u16) -> Option<Grid<D>> {
+    pub fn init_with_data(init_data: &[D], width: u16) -> Result<Grid<D>,GError> {
         let size = init_data.len();
         let uw = width as usize;
         if size % uw != 0 {
-            None
+            Err(GError::InitializationError {size,width})
         } else {
-            Some(Grid { width, height: (size / uw) as u16, data: init_data.to_vec() })
+            Ok(Grid { width, height: (size / uw) as u16, data: init_data.to_vec() })
         }
     }
 
@@ -76,7 +80,7 @@ impl<D: DataType> Grid<D> {
     }
 }
 
-impl <D: PrintableDataType> Grid<D>{
+impl<D:PrintableDataType> Grid<D> {
     fn print(&self) {
         for (i, v) in self.data.iter().enumerate() {
             print!("{}", v.get_char());
@@ -142,20 +146,20 @@ impl Iterator for CoordIter {
 impl <R> Game<R>
     where R:RuleSet,
           R::Data: RandomInit {
-    pub fn init_random(game_size:(u16,u16)) -> Option<Game<R>>{
+    pub fn init_random(game_size:(u16,u16)) -> Game<R>{
         let total_size = game_size.0 as usize * game_size.1 as usize;
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
             data.push(R::Data::rnd())
         };
-        Game::init_with_data(&data, game_size.0)
+        Game::init_with_data(&data, game_size.0).expect("Internal Error")
     }
 }
 
 impl <R> Game<R>
     where R: RuleSet{
-    pub fn init_with_data(init_data: &[R::Data], width: u16) -> Option<Game<R>> {
-        Grid::init_with_data(init_data, width).map_or(None, |grid| Some(Game { grid}))
+    pub fn init_with_data(init_data: &[R::Data], width: u16) -> Result<Game<R>, GError> {
+        Grid::init_with_data(init_data, width).map( |grid| Game { grid})
     }
 
     fn get_coord_iter(&self) -> CoordIter {
@@ -219,13 +223,13 @@ impl<R> Game<R>
     R::Data: ColoredDataType{
 
     #[cfg(feature = "ggez")]
-    pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),String>{
+    pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),GError>{
         ggez_graphics::run(window_size,self)
     }
 
     #[cfg(feature = "piston")]
-    pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),String>{
-        piston_graphics::run(window_size,self)
+    pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),GError>{
+        piston_graphics::run(window_size,self).map_err(|e|GError::PistonError {source:e})
     }
 
     pub fn to_raw_colors(&self) -> Vec<u8>{
