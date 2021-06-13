@@ -14,6 +14,8 @@ mod piston_graphics;
 #[cfg(feature = "graphics-pixels")]
 mod pixels_graphics;
 
+mod scripting;
+
 type IndexType = (i32, i32);
 
 pub type Color = (u8,u8, u8, u8);
@@ -21,8 +23,8 @@ pub type Color = (u8,u8, u8, u8);
 
 pub trait RuleSet {
     type Data:DataType;
+    const SOURCE_SIZE:u8;
     fn next(source: &[&Self::Data]) -> Self::Data;
-    fn source_size() -> u8;
 }
 
 pub trait DataType: Clone + Send + Sync +'static {}
@@ -175,7 +177,7 @@ impl <R> Game<R>
         let mut handles = vec![];
         let height = self.grid.height;
         let width = self.grid.width;
-        let source_size = R::source_size();
+        let source_size = R::SOURCE_SIZE;
         for index in 0..NUMBER_OF_THREADS{
             let y_start = index * height/NUMBER_OF_THREADS;
             let y_end = (index+1) * height/NUMBER_OF_THREADS;

@@ -33,6 +33,7 @@ pub struct HeatRules {}
 
 impl RuleSet for HeatRules {
     type Data = HeatData;
+    const SOURCE_SIZE: u8 = 3;
 
     fn next(source: &[&Self::Data]) -> Self::Data {
         let me = source[4].value;
@@ -43,9 +44,6 @@ impl RuleSet for HeatRules {
         //HeatData{value: source[4].value}
     }
 
-    fn source_size() -> u8 {
-        3
-    }
 }
 
 fn generate_heat_data(size: (u16, u16)) -> Vec<HeatData> {

@@ -5,6 +5,7 @@ pub struct ClassicConway {}
 
 impl RuleSet for ClassicConway {
     type Data = BoolData;
+    const SOURCE_SIZE: u8 = 3;
 
     fn next(source: &[&BoolData]) -> BoolData {
         let me = source[4].value;
@@ -15,10 +16,6 @@ impl RuleSet for ClassicConway {
             (true, 2) | (_, 3) => BoolData { value: true },
             _ => BoolData { value: false }
         }
-    }
-
-    fn source_size() -> u8 {
-        3
     }
 }
 
@@ -91,6 +88,7 @@ pub struct ConwayWithHistory {}
 
 impl RuleSet for ConwayWithHistory {
     type Data = BoolHist;
+    const SOURCE_SIZE: u8 = 3;
 
     fn next(source: &[&BoolHist]) -> BoolHist {
         let me = source[4];
@@ -105,10 +103,6 @@ impl RuleSet for ConwayWithHistory {
         history.push_back(me.current);
         history.pop_front();
         BoolHist { current, history }
-    }
-
-    fn source_size() -> u8 {
-        3
     }
 }
 
@@ -138,6 +132,7 @@ pub struct ConwayColors {}
 
 impl RuleSet for ConwayColors {
     type Data = ColorData;
+    const SOURCE_SIZE: u8 = 3;
 
     fn next(source: &[&ColorData]) -> ColorData {
         let me = source[4];
@@ -160,7 +155,4 @@ impl RuleSet for ConwayColors {
         ColorData { r, g, b }
     }
 
-    fn source_size() -> u8 {
-        3
-    }
 }
