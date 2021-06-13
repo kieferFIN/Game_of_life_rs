@@ -43,17 +43,17 @@ pub trait RandomInit {
 struct Grid<D> {
     width: u16,
     height: u16,
-    data: Vec<D>,
+    data: Box<[D]>,
 }
 
 impl<D: DataType> Grid<D> {
-    pub fn init_with_data(init_data: &[D], width: u16) -> Result<Grid<D>,GError> {
+    pub fn init_with_data(init_data: Vec<D>, width: u16) -> Result<Grid<D>,GError> {
         let size = init_data.len();
         let uw = width as usize;
         if size % uw != 0 {
             Err(GError::InitializationError {size,width})
         } else {
-            Ok(Grid { width, height: (size / uw) as u16, data: init_data.to_vec() })
+            Ok(Grid { width, height: (size / uw) as u16, data: init_data.into_boxed_slice() })
         }
     }
 
@@ -75,10 +75,10 @@ impl<D: DataType> Grid<D> {
         v
     }
 
-    fn get_raw_data(&self) -> &Vec<D> {
+    fn get_raw_data(&self) -> &[D] {
         &self.data
     }
-    fn get_raw_mut_data(&mut self) -> &mut Vec<D> {
+    fn get_raw_mut_data(&mut self) -> &mut [D] {
         &mut self.data
     }
 }
@@ -155,13 +155,13 @@ impl <R> Game<R>
         for _ in 0..total_size {
             data.push(R::Data::rnd())
         };
-        Game::init_with_data(&data, game_size.0).expect("Internal Error")
+        Game::init_with_data(data, game_size.0).expect("Internal Error")
     }
 }
 
 impl <R> Game<R>
     where R: RuleSet{
-    pub fn init_with_data(init_data: &[R::Data], width: u16) -> Result<Game<R>, GError> {
+    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
         Grid::init_with_data(init_data, width).map( |grid| Game { grid})
     }
 
@@ -211,15 +211,6 @@ impl<R> Game<R>
     }
 }
 
-impl<'a,R> IntoIterator for &'a Game<R>
-    where R: RuleSet{
-    type Item = (IndexType,&'a R::Data);
-    type IntoIter = GameIter<'a,R::Data>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        GameIter{coord: self.get_coord_iter(), data: &self.grid.get_raw_data(), i:0 }
-    }
-}
 
 #[cfg(feature = "graphics-ggez")]
 pub fn run_with_ggez<R:'static>(game: Game<R>, window_size:(u32,u32))-> !
@@ -228,21 +219,24 @@ pub fn run_with_ggez<R:'static>(game: Game<R>, window_size:(u32,u32))-> !
     ggez_graphics::run(window_size,game)
 }
 
+#[cfg(feature = "graphics-piston")]
+pub fn run_with_piston<R>(&mut game: Game<R>, window_size:(u32,u32))-> Result<(),GError>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    piston_graphics::run(window_size,game).map_err(|e|GError::PistonError {source:e})
+}
+
+#[cfg(feature = "graphics-pixels")]
+pub fn run_with_pixels<R>(&mut game: Game<R>, window_size:(u32,u32))->Result<(), GError>
+    where R: RuleSet,
+          R::Data: ColoredDataType{
+    pixels_graphics::run(window_size,game)
+}
+
+
 impl<R> Game<R>
     where R: RuleSet,
     R::Data: ColoredDataType{
-
-
-
-    #[cfg(feature = "graphics-piston")]
-    pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),GError>{
-        piston_graphics::run(window_size,self).map_err(|e|GError::PistonError {source:e})
-    }
-
-    #[cfg(feature = "graphics-pixels")]
-    pub fn run_with_pixels(&mut self, window_size:(u32,u32))->Result<(), GError>{
-        pixels_graphics::run(window_size,self)
-    }
 
     pub fn to_raw_colors(&self) -> Vec<u8>{
         let capacity = self.grid.width as usize * self.grid.height as usize * 4;
@@ -261,8 +255,18 @@ impl<R> Game<R>
 
 pub struct GameIter<'a,D>{
     coord: CoordIter,
-    data: &'a Vec<D>,
+    data: &'a [D],
     i: usize
+}
+
+impl<'a,R> IntoIterator for &'a Game<R>
+    where R: RuleSet{
+    type Item = (IndexType,&'a R::Data);
+    type IntoIter = GameIter<'a,R::Data>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GameIter{coord: self.get_coord_iter(), data: &self.grid.get_raw_data(), i:0 }
+    }
 }
 
 impl<'a,D> Iterator for GameIter<'a,D>
