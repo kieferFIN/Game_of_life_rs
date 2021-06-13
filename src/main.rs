@@ -4,7 +4,7 @@ mod conway_rules;
 
 use heat_rules::HeatRules;
 use conway_rules::{ClassicConway, ConwayWithHistory, ConwayColors, BoolData};
-use game_of_life::Game;
+use game_of_life::{Game, run_with_ggez};
 
 
 //**************************************************************
@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     let mut game: Game<ClassicConway> = Game::init_random(SIZE);
 
     #[cfg(feature = "graphics-ggez")]
-        game.run_with_ggez((WIDTH, HEIGHT)).context("Something bad happened in ggez.")?;
+        run_with_ggez(game, (WIDTH, HEIGHT));
 
     #[cfg(feature = "graphics-piston")]
         game.run_with_piston((WIDTH, HEIGHT)).context("Something bad happened in piston.")?;

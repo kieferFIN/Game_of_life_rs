@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ggez = {version="0.5", optional=true}
+ggez = {version="0.6.0-rc1", optional=true}
 rand = "0.8"
 piston ={version="0.53", optional=true}
 piston2d-graphics = {version="0.40", optional=true}

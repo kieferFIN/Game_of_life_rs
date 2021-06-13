@@ -1,44 +1,43 @@
 use ggez::input::keyboard::KeyMods;
 use ggez::{ContextBuilder, Context, GameResult, GameError};
 use ggez::conf::WindowMode;
-use ggez::event::{EventHandler, KeyCode, EventsLoop};
+use ggez::event::{EventHandler, KeyCode};
 use ggez::event::run as ggez_run;
 use ggez::{graphics, timer, event};
-use ggez::graphics::{Rect, DrawParam, Image};
-use ggez::nalgebra::Point2;
+use ggez::graphics::{Rect, DrawParam, Image, Color};
 
 use crate::{RuleSet, Game, ColoredDataType, GError};
 use crate::GError::GgezError;
 
 
-pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), GError>
+pub fn run<R:'static>(window_size: (u32, u32), game: Game<R>) -> !
     where R: RuleSet,
           R::Data: ColoredDataType {
-    let (mut ctx, mut event_loop) = ContextBuilder::new("Game of Life", "Eero")
+    let (mut ctx, event_loop) = ContextBuilder::new("Game of Life", "Eero")
         .window_mode(WindowMode { width: window_size.0 as f32, height: window_size.1 as f32, ..Default::default() })
         .build().unwrap();
-    let mut handler = MyEventHandler::<R>::new(&mut ctx, game).unwrap();
-    ggez_run(&mut ctx, &mut event_loop, &mut handler).map_err(|e| GgezError {source:e})
+    let handler = MyEventHandler::<R>::new(&mut ctx, game).unwrap();
+    ggez_run(ctx, event_loop, handler);
 }
 
-struct MyEventHandler<'a, R>
+struct MyEventHandler<R>
     where R: RuleSet {
-    game: &'a mut Game<R>,
+    game: Game<R>,
     fps: graphics::Text,
     is_pause: bool,
     show_fps: bool,
 }
 
-impl<'a, R> MyEventHandler<'a, R>
+impl<R> MyEventHandler<R>
     where R: RuleSet {
-    fn new(ctx: &mut Context, game: &'a mut Game<R>) -> GameResult<MyEventHandler<'a, R>> {
+    fn new(ctx: &mut Context, game: Game<R>) -> GameResult<MyEventHandler<R>> {
         graphics::set_screen_coordinates(ctx, Rect::new_i32(0, 0, game.grid.width as i32, game.grid.height as i32))?;
         graphics::set_default_filter(ctx, graphics::FilterMode::Nearest);
         Ok(MyEventHandler { game, fps: graphics::Text::new(""), is_pause: true, show_fps: false })
     }
 }
 
-impl<'a, R> EventHandler for MyEventHandler<'a, R>
+impl<R> EventHandler for MyEventHandler<R>
     where R: RuleSet,
           R::Data: ColoredDataType {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
@@ -55,10 +54,10 @@ impl<'a, R> EventHandler for MyEventHandler<'a, R>
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         let img = Image::from_rgba8(ctx, self.game.grid.width, self.game.grid.height, &self.game.to_raw_colors())?;
 
-        graphics::clear(ctx, graphics::BLACK);
+        graphics::clear(ctx, Color::BLACK);
         graphics::draw(ctx, &img, DrawParam::default())?;
         if self.show_fps {
-            graphics::draw(ctx, &self.fps, (Point2::new(0.0, 0.0), graphics::WHITE))?;
+            graphics::draw(ctx, &self.fps, ([0.0, 0.0], Color::WHITE))?;
         }
         graphics::present(ctx)?;
         Ok(())

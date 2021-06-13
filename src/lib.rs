@@ -221,14 +221,18 @@ impl<'a,R> IntoIterator for &'a Game<R>
     }
 }
 
+#[cfg(feature = "graphics-ggez")]
+pub fn run_with_ggez<R:'static>(game: Game<R>, window_size:(u32,u32))-> !
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    ggez_graphics::run(window_size,game)
+}
+
 impl<R> Game<R>
     where R: RuleSet,
     R::Data: ColoredDataType{
 
-    #[cfg(feature = "graphics-ggez")]
-    pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),GError>{
-        ggez_graphics::run(window_size,self)
-    }
+
 
     #[cfg(feature = "graphics-piston")]
     pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),GError>{
