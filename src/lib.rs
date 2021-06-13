@@ -5,11 +5,14 @@ pub use crate::error_handling::GError;
 
 mod error_handling;
 
-#[cfg(feature = "ggez")]
+#[cfg(feature = "graphics-ggez")]
 mod ggez_graphics;
 
-#[cfg(feature = "piston")]
+#[cfg(feature = "graphics-piston")]
 mod piston_graphics;
+
+#[cfg(feature = "graphics-pixels")]
+mod pixels_graphics;
 
 type IndexType = (i32, i32);
 
@@ -222,14 +225,19 @@ impl<R> Game<R>
     where R: RuleSet,
     R::Data: ColoredDataType{
 
-    #[cfg(feature = "ggez")]
+    #[cfg(feature = "graphics-ggez")]
     pub fn run_with_ggez(&mut self, window_size:(u32,u32))-> Result<(),GError>{
         ggez_graphics::run(window_size,self)
     }
 
-    #[cfg(feature = "piston")]
+    #[cfg(feature = "graphics-piston")]
     pub fn run_with_piston(&mut self, window_size:(u32,u32))-> Result<(),GError>{
         piston_graphics::run(window_size,self).map_err(|e|GError::PistonError {source:e})
+    }
+
+    #[cfg(feature = "graphics-pixels")]
+    pub fn run_with_pixels(&mut self, window_size:(u32,u32))->Result<(), GError>{
+        pixels_graphics::run(window_size,self)
     }
 
     pub fn to_raw_colors(&self) -> Vec<u8>{

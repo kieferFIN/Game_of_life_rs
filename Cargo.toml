@@ -1,6 +1,6 @@
 [package]
 name = "game_of_life"
-version = "0.3.0"
+version = "0.3.5"
 authors = ["kiefer <eero.manty@gmail.com>"]
 edition = "2018"
 
@@ -14,9 +14,14 @@ piston2d-graphics = {version="0.40", optional=true}
 pistoncore-glutin_window = {version="0.69", optional=true}
 piston2d-opengl_graphics = {version="0.78", optional=true}
 image = {version = "0.23", optional=true}
+pixels = {version="0.2", optional=true}
+winit = {version="0.24", optional=true}
+winit_input_helper= {version="0.9", optional=true}
 thiserror = "1.0"
 anyhow = "1.0"
 
 [features]
 graphics-ggez = ["ggez"]
 graphics-piston = ["piston","piston2d-graphics", "pistoncore-glutin_window","piston2d-opengl_graphics","image"]
+graphics-pixels = ["pixels", "winit", "winit_input_helper"]
+

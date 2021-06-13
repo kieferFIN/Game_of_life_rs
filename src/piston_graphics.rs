@@ -1,4 +1,3 @@
-use crate::{RuleSet, ColoredDataType, Game};
 use image::{RgbaImage};
 use piston::{WindowSettings, Events, EventSettings, RenderEvent, UpdateEvent, EventLoop, ButtonEvent, ButtonState, Button, Key};
 use glutin_window::GlutinWindow;
@@ -10,6 +9,8 @@ use std::error::Error;
 use thiserror::Error;
 use anyhow;
 use thiserror::private::AsDynError;
+
+use crate::{RuleSet, ColoredDataType, Game};
 
 #[derive(Error, Debug)]
 #[error("Piston  error: {msg}")]
@@ -40,7 +41,6 @@ pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), PistonE
 
     while let Some(e) = events.next(&mut window){
         if let Some(args) = e.render_args(){
-
 
             let r:Result<(), PistonError> = gl_graph.draw(args.viewport(), |c, gl|{
                 clear(BLUE, gl);

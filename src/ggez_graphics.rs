@@ -8,6 +8,7 @@ use ggez::graphics::{Rect, DrawParam, Image};
 use ggez::nalgebra::Point2;
 
 use crate::{RuleSet, Game, ColoredDataType, GError};
+use crate::GError::GgezError;
 
 
 pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), GError>
@@ -17,7 +18,7 @@ pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), GError>
         .window_mode(WindowMode { width: window_size.0 as f32, height: window_size.1 as f32, ..Default::default() })
         .build().unwrap();
     let mut handler = MyEventHandler::<R>::new(&mut ctx, game).unwrap();
-    ggez_run(&mut ctx, &mut event_loop, &mut handler).map_err(|e| GError::GgezError {source:e})
+    ggez_run(&mut ctx, &mut event_loop, &mut handler).map_err(|e| GgezError {source:e})
 }
 
 struct MyEventHandler<'a, R>
