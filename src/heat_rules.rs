@@ -29,13 +29,14 @@ impl RandomInit for HeatData {
     }
 }
 
+#[derive(Clone)]
 pub struct HeatRules {}
 
 impl RuleSet for HeatRules {
     type Data = HeatData;
     const SOURCE_SIZE: u8 = 3;
 
-    fn next(source: &[&Self::Data]) -> Self::Data {
+    fn next(&self, source: &[&Self::Data]) -> Self::Data {
         let me = source[4].value;
         let factor = source[4].factor;
         let avg = (source.iter().fold(0.0, |acc, d| acc + d.value) - me) / 8.0;

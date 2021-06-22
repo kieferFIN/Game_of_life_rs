@@ -1,6 +1,6 @@
 [package]
 name = "game_of_life"
-version = "0.3.5"
+version = "0.4.0"
 authors = ["kiefer <eero.manty@gmail.com>"]
 edition = "2018"
 
@@ -17,7 +17,7 @@ image = {version = "0.23", optional=true}
 pixels = {version="0.2", optional=true}
 winit = {version="0.24", optional=true}
 winit_input_helper= {version="0.9", optional=true}
-rhai = {version = "0.20", optional=true}
+rhai = {version = "0.20", optional=true,features=["sync", "f32_float", "only_i32"]}
 thiserror = "1.0"
 anyhow = "1.0"
 

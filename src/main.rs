@@ -22,7 +22,7 @@ fn main() -> Result<()> {
 
     //let mut game: Game<ClassicConway>  = Game::init_with_data(&v,30).context("Size of data and width of data do not match")?;
 
-    let mut game: Game<ClassicConway> = Game::init_random(SIZE);
+    let mut game: Game<ClassicConway> = Game::init_random_data(SIZE);
 
     #[cfg(feature = "graphics-ggez")]
         run_with_ggez(game, (WIDTH, HEIGHT));
