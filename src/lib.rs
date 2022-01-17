@@ -2,8 +2,10 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
 pub use crate::error_handling::GError;
+pub use crate::timer::Timer;
 
 mod error_handling;
+mod timer;
 
 #[cfg(feature = "graphics-ggez")]
 mod ggez_graphics;
@@ -16,6 +18,10 @@ mod pixels_graphics;
 
 #[cfg(feature = "scripting")]
 mod scripting;
+
+#[cfg(feature = "graphics-sfml")]
+mod sfml_graphics;
+
 
 type IndexType = (i32, i32);
 
@@ -248,6 +254,13 @@ pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result
           R::Data: ColoredDataType {
     pixels_graphics::run(window_size, game)
 }
+#[cfg(feature = "graphics-sfml")]
+pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    sfml_graphics::run(window_size,game);
+    Ok(())
+}
 
 
 impl<R> Game<R>
@@ -290,6 +303,15 @@ impl<R> Game<R>
           R::Data: ColoredDataType {
     pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_pixels(self, window_size)
+    }
+}
+
+#[cfg(feature = "graphics-sfml")]
+impl<R> Game<R>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+        run_with_sfml(self, window_size)
     }
 }
 
