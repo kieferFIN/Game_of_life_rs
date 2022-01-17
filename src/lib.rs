@@ -267,12 +267,29 @@ impl<R> Game<R>
     }
 }
 
+#[cfg(feature = "graphics-ggez")]
+impl<R> Game<R>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    pub fn run(self, window_size: (u32, u32)) -> ! {
+        run_with_ggez(self, window_size)
+    }
+}
+
 #[cfg(feature = "graphics-piston")]
 impl<R> Game<R>
     where R: RuleSet,
           R::Data: ColoredDataType {
-    pub fn run_with_piston(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_piston(self, window_size)
+    }
+}
+#[cfg(feature = "graphics-pixels")]
+impl<R> Game<R>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+        run_with_pixels(self, window_size)
     }
 }
 
