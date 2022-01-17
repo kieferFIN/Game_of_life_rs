@@ -14,10 +14,10 @@ piston2d-graphics = {version="0.41", optional=true}
 pistoncore-glutin_window = {version="0.69", optional=true}
 piston2d-opengl_graphics = {version="0.79", optional=true}
 image = {version = "0.23", optional=true}
-pixels = {version="0.8", optional=true}
+pixels = {version="0.9", optional=true}
 winit = {version="0.26", optional=true}
 winit_input_helper= {version="0.11", optional=true}
-rhai = {version = "1.3", optional=true,features=["sync", "f32_float", "only_i32"]}
+rhai = {version = "1.4", optional=true,features=["sync", "f32_float", "only_i32"]}
 thiserror = "1.0"
 anyhow = "1.0"
 

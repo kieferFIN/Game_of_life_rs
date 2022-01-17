@@ -1,13 +1,12 @@
 use ggez::input::keyboard::KeyMods;
-use ggez::{ContextBuilder, Context, GameResult, GameError};
+use ggez::{ContextBuilder, Context, GameResult};
 use ggez::conf::WindowMode;
 use ggez::event::{EventHandler, KeyCode};
 use ggez::event::run as ggez_run;
 use ggez::{graphics, timer, event};
 use ggez::graphics::{Rect, DrawParam, Image, Color};
 
-use crate::{RuleSet, Game, ColoredDataType, GError};
-use crate::GError::GgezError;
+use crate::{RuleSet, Game, ColoredDataType};
 
 
 pub fn run<R:'static>(window_size: (u32, u32), game: Game<R>) -> !
