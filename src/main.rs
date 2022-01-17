@@ -16,7 +16,7 @@ use anyhow::{Context, Result};
 fn main() -> Result<(),GError> {
     use game_of_life::RandomInit;
 
-    const WIDTH: u32 = 600;
+    const WIDTH: u32 = 400;
     const HEIGHT: u32 = 600;
     const SIZE: (u16, u16) = (300, 300);
 
@@ -26,5 +26,5 @@ fn main() -> Result<(),GError> {
 
     let mut game: Game<RGBRules> = Game::init_random_data(SIZE);
 
-    game.run((480,360))
+    game.run((WIDTH,HEIGHT))
 }

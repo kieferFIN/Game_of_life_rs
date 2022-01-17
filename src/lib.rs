@@ -243,7 +243,7 @@ pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result
 }
 
 #[cfg(feature = "graphics-pixels")]
-pub fn run_with_pixels<R>(&mut game: Game<R>, window_size: (u32, u32)) -> Result<(), GError>
+pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
     where R: RuleSet,
           R::Data: ColoredDataType {
     pixels_graphics::run(window_size, game)
