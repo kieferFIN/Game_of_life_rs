@@ -1,4 +1,4 @@
-use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, PrintableDataType, Color, InitRuleSet};
+use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, PrintableDataType, Color};
 use std::collections::VecDeque;
 
 #[derive(Clone)]
@@ -8,7 +8,7 @@ impl RuleSet for ClassicConway {
     type Data = BoolData;
     const SOURCE_SIZE: u8 = 3;
 
-    fn next(&self, source: &[&BoolData]) -> BoolData {
+    fn next(source: &[&BoolData]) -> BoolData {
         let me = source[4].value;
         let all: i32 = source.iter().map(|x| x.value as i32).sum();
         let neighbours = all - me as i32;
@@ -20,15 +20,15 @@ impl RuleSet for ClassicConway {
     }
 }
 
-impl InitRuleSet for ClassicConway{
+/*impl InitRuleSet for ClassicConway{
     fn init() -> Self {
         ClassicConway{}
     }
-}
+}*/
 
 #[derive(Clone)]
 pub struct BoolData {
-    value: bool
+    value: bool,
 }
 
 impl DataType for BoolData {}
@@ -68,6 +68,8 @@ pub struct BoolHist {
     history: VecDeque<bool>,
 }
 
+impl DataType for BoolHist {}
+
 impl RandomInit for BoolHist {
     fn rnd() -> BoolHist {
         BoolHist {
@@ -77,10 +79,8 @@ impl RandomInit for BoolHist {
     }
 }
 
-impl DataType for BoolHist {}
-
 impl ColoredDataType for BoolHist {
-    fn get_color(&self) -> Color{
+    fn get_color(&self) -> Color {
         if self.current {
             (255, 255, 255, 255)
         } else {
@@ -98,7 +98,7 @@ impl RuleSet for ConwayWithHistory {
     type Data = BoolHist;
     const SOURCE_SIZE: u8 = 3;
 
-    fn next(&self, source: &[&BoolHist]) -> BoolHist {
+    fn next(source: &[&BoolHist]) -> BoolHist {
         let me = source[4];
         let all: i32 = source.iter().map(|x| x.current as i32).sum();
         let neighbours = all - me.current as i32;
@@ -122,13 +122,13 @@ pub struct ColorData {
     b: bool,
 }
 
+impl DataType for ColorData {}
+
 impl RandomInit for ColorData {
     fn rnd() -> Self {
         ColorData { r: rand::random::<bool>(), g: rand::random::<bool>(), b: rand::random::<bool>() }
     }
 }
-
-impl DataType for ColorData {}
 
 impl ColoredDataType for ColorData {
     fn get_color(&self) -> Color {
@@ -143,7 +143,7 @@ impl RuleSet for ConwayColors {
     type Data = ColorData;
     const SOURCE_SIZE: u8 = 3;
 
-    fn next(&self, source: &[&ColorData]) -> ColorData {
+    fn next(source: &[&ColorData]) -> ColorData {
         let me = source[4];
         let all = source.iter().fold((0, 0, 0), |acc, d| (acc.0 + d.r as i8, acc.1 + d.g as i8, acc.2 + d.b as i8));
         let neighbours = (all.0 - me.r as i8, all.1 - me.g as i8, all.2 - me.b as i8);
@@ -163,5 +163,4 @@ impl RuleSet for ConwayColors {
 
         ColorData { r, g, b }
     }
-
 }

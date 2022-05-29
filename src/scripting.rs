@@ -33,7 +33,7 @@ impl ScriptRules {
     }
 }
 
-impl RuleSet for ScriptRules {
+/*impl RuleSet for ScriptRules {
     type Data = ScriptedData;
     const SOURCE_SIZE: u8 = 3;
 
@@ -41,4 +41,4 @@ impl RuleSet for ScriptRules {
         let r = self.engine.call_fn(&mut Scope::new(), &self.ast, &self.update_fn_name, (source,));
 		r
     }
-}
+}*/

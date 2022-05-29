@@ -31,11 +31,7 @@ pub type Color = (u8, u8, u8, u8);
 pub trait RuleSet: Clone + Send + Sync + 'static {
     type Data: DataType;
     const SOURCE_SIZE: u8;
-    fn next(&self, source: &[&Self::Data]) -> Self::Data;
-}
-
-pub trait InitRuleSet: RuleSet {
-    fn init() -> Self;
+    fn next(source: &[&Self::Data]) -> Self::Data;
 }
 
 pub trait DataType: Clone + Send + Sync + 'static {}
@@ -157,14 +153,13 @@ impl Iterator for CoordIter {
 pub struct Game<R>
     where R: RuleSet {
     grid: Grid<R::Data>,
-    rules: R,
 }
 
 
 impl<R> Game<R>
     where R: RuleSet {
-    fn init_with_rules_and_data(rules: R, init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
-        Grid::init_with_data(init_data, width).map(|grid| Game { grid, rules })
+    fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
+        Grid::init_with_data(init_data, width).map(|grid| Game { grid })
     }
 
     fn get_coord_iter(&self) -> CoordIter {
@@ -174,7 +169,7 @@ impl<R> Game<R>
     pub fn next_step(&mut self) {
         const NUMBER_OF_THREADS: u16 = 4;
         let grid_copy = Arc::new(self.grid.clone());
-        let rules_copy = Arc::new(self.rules.clone());
+        //let rules_copy = Arc::new(self.rules.clone());
         let mut handles = vec![];
         let height = self.grid.height;
         let width = self.grid.width;
@@ -183,13 +178,13 @@ impl<R> Game<R>
             let y_start = index * height / NUMBER_OF_THREADS;
             let y_end = (index + 1) * height / NUMBER_OF_THREADS;
             let grid_copy = Arc::clone(&grid_copy);
-            let rules_copy = Arc::clone(&rules_copy);
+            //let rules_copy = Arc::clone(&rules_copy);
             let handle = thread::spawn(move || {
                 let iter = CoordIter { width, height: y_end, x: 0, y: y_start };
                 let mut v = Vec::with_capacity(((y_end - y_start) * width) as usize);
                 for c in iter {
                     let area = grid_copy.get_area(c, source_size);
-                    v.push(rules_copy.next(area.as_slice()));
+                    v.push(R::next(area.as_slice()));
                 }
                 (y_start, y_end, v)
             });
@@ -205,15 +200,15 @@ impl<R> Game<R>
     }
 }
 
-impl<R> Game<R>
+/*impl<R> Game<R>
     where R: InitRuleSet {
     pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
         Grid::init_with_data(init_data, width).map(|grid| Game { grid, rules: R::init() })
     }
-}
+}*/
 
 impl<R> Game<R>
-    where R: InitRuleSet,
+    where R: RuleSet,
           R::Data: RandomInit {
     pub fn init_random_data(game_size: (u16, u16)) -> Game<R> {
         let total_size = game_size.0 as usize * game_size.1 as usize;
@@ -254,11 +249,12 @@ pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result
           R::Data: ColoredDataType {
     pixels_graphics::run(window_size, game)
 }
+
 #[cfg(feature = "graphics-sfml")]
 pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
     where R: RuleSet,
           R::Data: ColoredDataType {
-    sfml_graphics::run(window_size,game);
+    sfml_graphics::run(window_size, game);
     Ok(())
 }
 
@@ -297,6 +293,7 @@ impl<R> Game<R>
         run_with_piston(self, window_size)
     }
 }
+
 #[cfg(feature = "graphics-pixels")]
 impl<R> Game<R>
     where R: RuleSet,

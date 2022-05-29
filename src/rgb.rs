@@ -1,4 +1,4 @@
-use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet, InitRuleSet};
+use game_of_life::{DataType, ColoredDataType, RandomInit, RuleSet};
 use rand::Rng;
 
 #[derive(Clone)]
@@ -38,7 +38,7 @@ impl RuleSet for RGBRules {
 	type Data = RGBData;
 	const SOURCE_SIZE: u8 = 3;
 
-	fn next(&self, source: &[&Self::Data]) -> Self::Data {
+	fn next( source: &[&Self::Data]) -> Self::Data {
 		const LIMIT:u8 = 3;
 		let me = source[4];
 		let neighbour = source.iter().fold((0,0,0), |acc, d|
@@ -56,8 +56,8 @@ impl RuleSet for RGBRules {
 	}
 }
 
-impl InitRuleSet for RGBRules{
+/*impl InitRuleSet for RGBRules{
 	fn init() -> Self {
 		RGBRules{}
 	}
-}
+}*/

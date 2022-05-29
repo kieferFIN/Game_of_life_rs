@@ -4,7 +4,7 @@ mod rgb;
 
 
 use heat_rules::HeatRules;
-use conway_rules::{ClassicConway, ConwayWithHistory, ConwayColors, BoolData};
+use conway_rules::{ClassicConway, ConwayWithHistory, ConwayColors};
 use rgb::RGBRules;
 use game_of_life::{Game, GError};
 
@@ -13,18 +13,18 @@ use game_of_life::{Game, GError};
 
 use anyhow::{Context, Result};
 
-fn main() -> Result<(),GError> {
+fn main() -> Result<(), GError> {
     use game_of_life::RandomInit;
 
-    const WIDTH: u32 = 400;
+    const WIDTH: u32 = 800;
     const HEIGHT: u32 = 600;
-    const SIZE: (u16, u16) = (300, 300);
+    const SIZE: (u16, u16) = ((WIDTH / 2) as u16, (HEIGHT / 2) as u16);
 
     //let v:Vec<BoolData> = (0..600).map(|_|BoolData::rnd()).collect();
 
     //let mut game: Game<ClassicConway>  = Game::init_with_data(&v,30).context("Size of data and width of data do not match")?;
 
-    let mut game: Game<RGBRules> = Game::init_random_data(SIZE);
+    let mut game: Game<ClassicConway> = Game::init_random_data(SIZE);
 
-    game.run((WIDTH,HEIGHT))
+    game.run((WIDTH, HEIGHT))
 }
