@@ -31,6 +31,7 @@ pub struct BoolData {
     value: bool,
 }
 
+
 impl DataType for BoolData {}
 
 impl RandomInit for BoolData {
@@ -56,6 +57,12 @@ impl PrintableDataType for BoolData {
         } else {
             '_'
         }
+    }
+}
+
+impl From<bool> for BoolData {
+    fn from(b: bool) -> Self {
+        Self{value:b}
     }
 }
 

@@ -1,6 +1,9 @@
+extern crate core;
+
 use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
+
 pub use crate::error_handling::GError;
 pub use crate::timer::Timer;
 
@@ -21,6 +24,9 @@ mod scripting;
 
 #[cfg(feature = "graphics-sfml")]
 mod sfml_graphics;
+
+#[cfg(feature = "graphics-terminal")]
+mod terminal_graphics;
 
 
 type IndexType = (i32, i32);
@@ -158,7 +164,7 @@ pub struct Game<R>
 
 impl<R> Game<R>
     where R: RuleSet {
-    fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
+    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
         Grid::init_with_data(init_data, width).map(|grid| Game { grid })
     }
 
@@ -210,13 +216,13 @@ impl<R> Game<R>
 impl<R> Game<R>
     where R: RuleSet,
           R::Data: RandomInit {
-    pub fn init_random_data(game_size: (u16, u16)) -> Game<R> {
+    pub fn init_random_data(game_size: (u16, u16)) -> Result<Game<R>,GError> {
         let total_size = game_size.0 as usize * game_size.1 as usize;
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
             data.push(R::Data::rnd())
         };
-        Game::init_with_data(data, game_size.0).expect("Internal Error")
+        Game::init_with_data(data, game_size.0)
     }
 }
 
@@ -256,6 +262,13 @@ pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(
           R::Data: ColoredDataType {
     sfml_graphics::run(window_size, game);
     Ok(())
+}
+
+#[cfg(feature = "graphics-terminal")]
+pub fn run_in_terminal<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    terminal_graphics::run(window_size,game)
 }
 
 
@@ -312,6 +325,15 @@ impl<R> Game<R>
     }
 }
 
+#[cfg(feature = "graphics-terminal")]
+impl<R> Game<R>
+    where R: RuleSet,
+          R::Data: ColoredDataType {
+    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
+        run_in_terminal(self, window_size)
+    }
+}
+
 pub struct GameIter<'a, D> {
     coord: CoordIter,
     data: &'a [D],
@@ -338,5 +360,13 @@ impl<'a, D> Iterator for GameIter<'a, D>
             self.i += 1;
             (c, &self.data[i])
         })
+    }
+}
+
+impl<R: RuleSet> Index<IndexType> for Game<R>{
+    type Output = R::Data;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        &self.grid[index]
     }
 }
