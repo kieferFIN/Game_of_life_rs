@@ -5,7 +5,7 @@ use crossterm::QueueableCommand;
 use crossterm::cursor::{Hide, MoveTo, MoveToNextLine, Show};
 use crossterm::event::{Event, KeyCode, poll, read};
 use crossterm::style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor};
-use crossterm::terminal::{Clear, ClearType, disable_raw_mode, DisableLineWrap, enable_raw_mode, EnableLineWrap, SetSize, size as terminal_size, size};
+use crossterm::terminal::{Clear, ClearType, disable_raw_mode, DisableLineWrap, enable_raw_mode, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetSize, size as terminal_size, size};
 
 use crate::{Color as DataColor, ColoredDataType, Game, GError, RuleSet};
 
@@ -18,21 +18,20 @@ impl Ctx {
         let orig_size = Some(terminal_size()?);
         enable_raw_mode()?;
         let mut out = stdout();
-        out.queue(SetSize(size.0, size.1 + 6))?
-            .queue(Hide)?
+        out.queue(EnterAlternateScreen)?
             .queue(DisableLineWrap)?
+            .queue(SetSize(size.0, size.1 ))?
+            .queue(Hide)?
             .flush()?;
         Ok(Self { orig_size })
     }
     fn close(&mut self) -> Result<(), GError> {
         if let Some(size) = self.orig_size {
             let mut out = stdout();
-            out.queue(SetSize(size.0, size.1))?
+            out.queue(LeaveAlternateScreen)?
+                .queue(SetSize(size.0, size.1))?
                 .queue(Show)?
                 .queue(ResetColor)?
-                .queue(Clear(ClearType::Purge))?
-                .queue(Clear(ClearType::All))?
-                .queue(MoveTo(0, 0))?
                 .queue(EnableLineWrap)?
                 .flush()?;
             disable_raw_mode()?;
