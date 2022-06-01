@@ -24,7 +24,7 @@ fn main() -> Result<()> {
 
     //let mut game: Game<ClassicConway>  = Game::init_with_data(v,333).context("Data is wrong size")?;
 
-    let mut game: Game<RGBRules> = Game::init_random_data(SIZE).context("Data is wrong size")?;
+    let mut game: Game<ConwayWithHistory> = Game::init_random_data(SIZE).context("Data is wrong size")?;
 
     game.run((WIDTH, HEIGHT/2)).context("Error when running the game")
 
