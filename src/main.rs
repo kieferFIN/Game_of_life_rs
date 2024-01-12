@@ -1,32 +1,30 @@
-mod heat_rules;
 mod conway_rules;
+mod heat_rules;
 mod rgb;
 
 use anyhow::{Context, Result};
 
-use heat_rules::HeatRules;
-use conway_rules::{ClassicConway, BoolData, ConwayWithHistory, ConwayColors};
-use rgb::RGBRules;
+use conway_rules::{BoolData, ClassicConway, ConwayColors, ConwayWithHistory};
 use game_of_life::Game;
-
+use heat_rules::HeatRules;
+use rgb::RGBRules;
 
 //**************************************************************
 
-
 fn main() -> Result<()> {
-    use game_of_life::RandomInit;
+    //use game_of_life::RandomInit;
 
-    const WIDTH: u16 = 160;
-    const HEIGHT: u16 = 43*2;
-    const SIZE: (u16, u16) = (WIDTH, HEIGHT );
+    const WIDTH: u16 = 320;
+    const HEIGHT: u16 = 160;
+    const SIZE: (u16, u16) = (WIDTH, HEIGHT);
 
     //let v:Vec<BoolData> = (0..600).map(|_|BoolData::rnd()).collect();
 
     //let mut game: Game<ClassicConway>  = Game::init_with_data(v,333).context("Data is wrong size")?;
 
-    let mut game: Game<ConwayWithHistory> = Game::init_random_data(SIZE).context("Data is wrong size")?;
+    let mut game: Game<ConwayWithHistory> =
+        Game::init_random_data(SIZE).context("Data is wrong size")?;
 
-    game.run((WIDTH, HEIGHT/2)).context("Error when running the game")
-
-
+    game.run((WIDTH * 4, HEIGHT * 4))
+        .context("Error when running the game")
 }

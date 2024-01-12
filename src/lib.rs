@@ -28,11 +28,9 @@ mod sfml_graphics;
 #[cfg(feature = "graphics-terminal")]
 mod terminal_graphics;
 
-
 type IndexType = (i32, i32);
 
 pub type Color = (u8, u8, u8, u8);
-
 
 pub trait RuleSet: Clone + Send + Sync + 'static {
     type Data: DataType;
@@ -68,12 +66,19 @@ impl<D: DataType> Grid<D> {
         if size % uw != 0 {
             Err(GError::InitializationError { size, width })
         } else {
-            Ok(Grid { width, height: (size / uw) as u16, data: init_data.into_boxed_slice() })
+            Ok(Grid {
+                width,
+                height: (size / uw) as u16,
+                data: init_data.into_boxed_slice(),
+            })
         }
     }
 
     fn wrap(&self, index: IndexType) -> (usize, usize) {
-        (index.0.rem_euclid(self.width as i32) as usize, index.1.rem_euclid(self.height as i32) as usize)
+        (
+            index.0.rem_euclid(self.width as i32) as usize,
+            index.1.rem_euclid(self.height as i32) as usize,
+        )
     }
 
     fn get_area(&self, index: IndexType, size: u8) -> Vec<&D> {
@@ -155,21 +160,28 @@ impl Iterator for CoordIter {
     }
 }
 
-
 pub struct Game<R>
-    where R: RuleSet {
+where
+    R: RuleSet,
+{
     grid: Grid<R::Data>,
 }
 
-
 impl<R> Game<R>
-    where R: RuleSet {
+where
+    R: RuleSet,
+{
     pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
         Grid::init_with_data(init_data, width).map(|grid| Game { grid })
     }
 
     fn get_coord_iter(&self) -> CoordIter {
-        CoordIter { width: self.grid.width, height: self.grid.height, x: 0, y: 0 }
+        CoordIter {
+            width: self.grid.width,
+            height: self.grid.height,
+            x: 0,
+            y: 0,
+        }
     }
 
     pub fn next_step(&mut self) {
@@ -186,7 +198,12 @@ impl<R> Game<R>
             let grid_copy = Arc::clone(&grid_copy);
             //let rules_copy = Arc::clone(&rules_copy);
             let handle = thread::spawn(move || {
-                let iter = CoordIter { width, height: y_end, x: 0, y: y_start };
+                let iter = CoordIter {
+                    width,
+                    height: y_end,
+                    x: 0,
+                    y: y_start,
+                };
                 let mut v = Vec::with_capacity(((y_end - y_start) * width) as usize);
                 for c in iter {
                     let area = grid_copy.get_area(c, source_size);
@@ -214,67 +231,81 @@ impl<R> Game<R>
 }*/
 
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: RandomInit {
-    pub fn init_random_data(game_size: (u16, u16)) -> Result<Game<R>,GError> {
+where
+    R: RuleSet,
+    R::Data: RandomInit,
+{
+    pub fn init_random_data(game_size: (u16, u16)) -> Result<Game<R>, GError> {
         let total_size = game_size.0 as usize * game_size.1 as usize;
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
             data.push(R::Data::rnd())
-        };
+        }
         Game::init_with_data(data, game_size.0)
     }
 }
 
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: PrintableDataType {
+where
+    R: RuleSet,
+    R::Data: PrintableDataType,
+{
     pub fn print(&self) {
         self.grid.print();
     }
 }
 
-
 #[cfg(feature = "graphics-ggez")]
-pub fn run_with_ggez<R: 'static>(game: Game<R>, window_size: (u32, u32)) -> !
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+pub fn run_with_ggez<R: 'static>(game: Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     ggez_graphics::run(window_size, game)
 }
 
 #[cfg(feature = "graphics-piston")]
-pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     piston_graphics::run(window_size, game).map_err(|e| e.into())
 }
 
 #[cfg(feature = "graphics-pixels")]
-pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     pixels_graphics::run(window_size, game)
 }
 
 #[cfg(feature = "graphics-sfml")]
-pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     sfml_graphics::run(window_size, game);
     Ok(())
 }
 
 #[cfg(feature = "graphics-terminal")]
 pub fn run_in_terminal<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
-    terminal_graphics::run(window_size,game)
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    terminal_graphics::run(window_size, game)
 }
 
-
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     pub fn to_raw_colors(&self) -> Vec<u8> {
         let capacity = self.grid.width as usize * self.grid.height as usize * 4;
         let mut v = Vec::with_capacity(capacity);
@@ -284,51 +315,61 @@ impl<R> Game<R>
             v.push(g);
             v.push(b);
             v.push(a);
-        };
+        }
         v
     }
 }
 
 #[cfg(feature = "graphics-ggez")]
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
-    pub fn run(self, window_size: (u32, u32)) -> ! {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    pub fn run(self, window_size: (u16, u16)) -> Result<(), GError> {
         run_with_ggez(self, window_size)
     }
 }
 
 #[cfg(feature = "graphics-piston")]
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
         run_with_piston(self, window_size)
     }
 }
 
 #[cfg(feature = "graphics-pixels")]
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
         run_with_pixels(self, window_size)
     }
 }
 
 #[cfg(feature = "graphics-sfml")]
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
         run_with_sfml(self, window_size)
     }
 }
 
 #[cfg(feature = "graphics-terminal")]
 impl<R> Game<R>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
         run_in_terminal(self, window_size)
     }
@@ -341,17 +382,25 @@ pub struct GameIter<'a, D> {
 }
 
 impl<'a, R> IntoIterator for &'a Game<R>
-    where R: RuleSet {
+where
+    R: RuleSet,
+{
     type Item = (IndexType, &'a R::Data);
     type IntoIter = GameIter<'a, R::Data>;
 
     fn into_iter(self) -> Self::IntoIter {
-        GameIter { coord: self.get_coord_iter(), data: &self.grid.get_raw_data(), i: 0 }
+        GameIter {
+            coord: self.get_coord_iter(),
+            data: &self.grid.get_raw_data(),
+            i: 0,
+        }
     }
 }
 
 impl<'a, D> Iterator for GameIter<'a, D>
-    where D: DataType {
+where
+    D: DataType,
+{
     type Item = (IndexType, &'a D);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -363,7 +412,7 @@ impl<'a, D> Iterator for GameIter<'a, D>
     }
 }
 
-impl<R: RuleSet> Index<IndexType> for Game<R>{
+impl<R: RuleSet> Index<IndexType> for Game<R> {
     type Output = R::Data;
 
     fn index(&self, index: IndexType) -> &Self::Output {
