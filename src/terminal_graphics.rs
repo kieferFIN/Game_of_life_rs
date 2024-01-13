@@ -1,37 +1,46 @@
-use std::fmt;
+use std::io;
 use std::io::{stdout, Stdout, StdoutLock, Write};
 use std::time::Duration;
 
-use crossterm::{Command, ExecutableCommand, QueueableCommand};
 use crossterm::cursor::{Hide, MoveTo, MoveToNextLine, Show};
-use crossterm::event::{Event, KeyCode, poll, read};
+use crossterm::event::{poll, read, Event, KeyCode};
 use crossterm::style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor};
-use crossterm::terminal::{Clear, ClearType, disable_raw_mode, DisableLineWrap, enable_raw_mode, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetSize, size as terminal_size, size};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, size as terminal_size, size, DisableLineWrap,
+    EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetSize,
+};
+use crossterm::QueueableCommand;
 
-use crate::{Color as DataColor, ColoredDataType, Game, GError, RuleSet};
+use crate::{Color as DataColor, ColoredDataType, Game, RuleSet};
 
 struct Ctx {
     orig_size: (u16, u16),
     out: Stdout,
-    buffer: Vec<u8>
+    buffer: Vec<u8>,
 }
 
 impl Ctx {
-    fn open(size: (u16, u16), out: Stdout) -> Result<Self, GError> {
+    fn open(size: (u16, u16), out: Stdout) -> Result<Self, io::Error> {
         let orig_size = terminal_size()?;
         enable_raw_mode()?;
         let buffer = Vec::with_capacity(200);
-        let mut s = Self{orig_size,out, buffer};
-        s.get_buffer().queue(EnterAlternateScreen)?
+        let mut s = Self {
+            orig_size,
+            out,
+            buffer,
+        };
+        s.get_buffer()
+            .queue(EnterAlternateScreen)?
             .queue(DisableLineWrap)?
-            .queue(SetSize(size.0, size.1 ))?
+            .queue(SetSize(size.0, size.1))?
             .queue(Hide)?
             .flush()?;
         Ok(s)
     }
-    fn close(&mut self) -> Result<(), GError> {
+    fn close(&mut self) -> Result<(), io::Error> {
         let size = self.orig_size;
-        self.get_buffer().queue(LeaveAlternateScreen)?
+        self.get_buffer()
+            .queue(LeaveAlternateScreen)?
             .queue(SetSize(size.0, size.1))?
             .queue(Show)?
             .queue(ResetColor)?
@@ -42,8 +51,8 @@ impl Ctx {
         Ok(())
     }
 
-    fn get_buffer(&mut self) -> BufferWriter<StdoutLock>{
-        BufferWriter::new(&mut self.buffer,self.out.lock())
+    fn get_buffer(&mut self) -> BufferWriter<StdoutLock> {
+        BufferWriter::new(&mut self.buffer, self.out.lock())
     }
 }
 
@@ -53,70 +62,68 @@ impl Drop for Ctx {
     }
 }
 
-pub fn run<R>(window_size: (u16, u16), game: &mut Game<R>) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+pub fn run<R>(window_size: (u16, u16), game: &mut Game<R>) -> Result<(), io::Error>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     let mut ctx = Ctx::open(window_size, stdout())?;
     let mut is_playing = false;
     draw(game, ctx.get_buffer())?;
     loop {
         if poll(Duration::from_millis(50))? {
             match read()? {
-                Event::Key(key) => {
-                    match key.code {
-                        KeyCode::Char(' ') => is_playing ^= true,
-                        KeyCode::Right if !is_playing => {
-                            game.next_step();
-                            draw(game,ctx.get_buffer())?
-                        }
-                        KeyCode::Char('c') | KeyCode::Esc => break,
-                        _ => {}
+                Event::Key(key) => match key.code {
+                    KeyCode::Char(' ') => is_playing ^= true,
+                    KeyCode::Right if !is_playing => {
+                        game.next_step();
+                        draw(game, ctx.get_buffer())?
                     }
-                }
-                Event::Resize(_, _) => draw(game,ctx.get_buffer())?,
+                    KeyCode::Char('c') | KeyCode::Esc => break,
+                    _ => {}
+                },
+                Event::Resize(_, _) => draw(game, ctx.get_buffer())?,
                 _ => {}
             }
         }
 
         if is_playing {
             game.next_step();
-            draw(game,ctx.get_buffer())?;
+            draw(game, ctx.get_buffer())?;
         }
     }
 
     Ok(())
 }
 
-fn convert(c: DataColor) -> Color {
-    Color::Rgb { r: c.0, g: c.1, b: c.2 }
-}
-
-fn draw<R, W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+fn draw<R, W: Write>(game: &Game<R>, out: W) -> Result<(), io::Error>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     let (_, h) = size()?;
     if h < game.grid.height {
         double_draw(game, out)
     } else {
-        simple_draw(game,out)
+        simple_draw(game, out)
     }
 }
 
-
-fn double_draw<R, W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+fn double_draw<R, W: Write>(game: &Game<R>, mut out: W) -> Result<(), io::Error>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     let mut top_color = Color::Rgb { r: 0, g: 0, b: 0 };
     let mut bottom_color = Color::Rgb { r: 0, g: 0, b: 0 };
-    out .queue(MoveTo(0, 0))?
+    out.queue(MoveTo(0, 0))?
         .queue(SetBackgroundColor(top_color))?
         .flush()?;
 
-
     for y_half in 0..game.grid.height as i32 / 2 {
         for x in 0..game.grid.width as i32 {
-            let tc = convert(game[(x, y_half * 2)].get_color());
-            let bc = convert(game[(x, y_half * 2 + 1)].get_color());
+            let tc = game[(x, y_half * 2)].get_color().to();
+            let bc = game[(x, y_half * 2 + 1)].get_color().to();
 
             if top_color != tc {
                 top_color = tc;
@@ -127,7 +134,6 @@ fn double_draw<R, W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
                 out.queue(SetForegroundColor(bottom_color))?;
             }
             out.queue(Print("▄"))?;
-
         }
         out.queue(MoveToNextLine(1))?;
     }
@@ -136,17 +142,18 @@ fn double_draw<R, W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
     Ok(())
 }
 
-fn simple_draw<R,W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+fn simple_draw<R, W: Write>(game: &Game<R>, mut out: W) -> Result<(), io::Error>
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     let mut current_color = Color::Rgb { r: 0, g: 0, b: 0 };
     out.queue(MoveTo(0, 0))?
         .queue(SetBackgroundColor(current_color))?
         .flush()?;
 
-
     for (i, cell) in game {
-        let color = convert(cell.get_color());
+        let color = cell.get_color().to();
         if current_color != color {
             current_color = color;
             out.queue(&SetBackgroundColor(current_color))?;
@@ -161,18 +168,18 @@ fn simple_draw<R,W:Write>(game: &Game<R>, mut out: W) -> Result<(), GError>
     Ok(())
 }
 
-struct BufferWriter<'b,W:Write>{
+struct BufferWriter<'b, W: Write> {
     buffer: &'b mut Vec<u8>,
-    out:W
+    out: W,
 }
 
-impl<'b,W:Write> BufferWriter<'b,W> {
-    fn new(buffer:&'b mut Vec<u8>, out: W)->Self{
-        Self{buffer,out}
+impl<'b, W: Write> BufferWriter<'b, W> {
+    fn new(buffer: &'b mut Vec<u8>, out: W) -> Self {
+        Self { buffer, out }
     }
 }
 
-impl<'b,W:Write> Write for BufferWriter<'b,W> {
+impl<'b, W: Write> Write for BufferWriter<'b, W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.buffer.write(buf)
     }
@@ -181,12 +188,33 @@ impl<'b,W:Write> Write for BufferWriter<'b,W> {
         self.out.write_all(&self.buffer)?;
         self.buffer.clear();
         self.out.flush()
-
     }
 }
 
-impl<'b,W:Write> Drop for BufferWriter<'b,W> {
+impl<'b, W: Write> Drop for BufferWriter<'b, W> {
     fn drop(&mut self) {
         self.flush().unwrap()
     }
 }
+
+trait ToColor {
+    fn to(self) -> Color;
+}
+
+impl ToColor for DataColor {
+    fn to(self) -> Color {
+        Color::Rgb {
+            r: self.0,
+            g: self.1,
+            b: self.2,
+        }
+    }
+}
+
+// fn convert(c: DataColor) -> Color {
+//     Color::Rgb {
+//         r: c.0,
+//         g: c.1,
+//         b: c.2,
+//     }
+// }

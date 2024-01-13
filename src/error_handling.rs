@@ -1,5 +1,3 @@
-#[cfg(feature = "graphics-terminal")]
-use crossterm::ErrorKind;
 #[cfg(feature = "ggez")]
 use ggez::GameError;
 #[cfg(feature = "scripting")]
@@ -15,21 +13,13 @@ pub enum GError {
     InitializationError { size: usize, width: u16 },
     #[cfg(feature = "graphics-ggez")]
     #[error("Something bad happened in Ggez")]
-    GgezError(
-        #[from]
-        GameError
-    ),
+    GgezError(#[from] GameError),
     #[cfg(feature = "graphics-piston")]
     #[error("Something bad happened in Piston")]
-    PistonError(
-        #[from]
-        PistonError
-    ),
+    PistonError(#[from] PistonError),
     #[cfg(feature = "graphics-pixels")]
     #[error("Something bad happened in Pixels")]
-    PixelsError {
-        source: anyhow::Error
-    },
+    PixelsError { source: anyhow::Error },
     #[cfg(feature = "graphics-pixels")]
     #[error("Something bad happened in Winit")]
     WinitError { source: anyhow::Error },
@@ -37,13 +27,10 @@ pub enum GError {
     #[error("Something bad happened in script")]
     ScriptError {
         #[from]
-        source: Box<EvalAltResult>
+        source: Box<EvalAltResult>,
     },
     #[cfg(feature = "graphics-terminal")]
     #[error("Something went wrong in terminal")]
     //#[error(transparent)]
-    TerminalError(
-        #[from]
-        ErrorKind
-    ),
+    TerminalError { source: anyhow::Error },
 }

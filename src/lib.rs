@@ -293,12 +293,13 @@ where
 }
 
 #[cfg(feature = "graphics-terminal")]
-pub fn run_in_terminal<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+pub fn run_in_terminal<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    terminal_graphics::run(window_size, game)
+    let w_s = (window_size.0 as u16, window_size.1 as u16);
+    terminal_graphics::run(w_s, game).map_err(|e| GError::TerminalError { source: e.into() })
 }
 
 impl<R> Game<R>
@@ -370,7 +371,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_in_terminal(self, window_size)
     }
 }
