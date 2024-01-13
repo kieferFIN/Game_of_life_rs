@@ -256,7 +256,7 @@ where
 }
 
 #[cfg(feature = "graphics-ggez")]
-pub fn run_with_ggez<R: 'static>(game: Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+pub fn run_with_ggez<R: 'static>(game: Game<R>, window_size: (u32, u32)) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
@@ -265,17 +265,16 @@ where
 }
 
 #[cfg(feature = "graphics-piston")]
-pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    let w_s = (window_size.0 as u32, window_size.1 as u32);
-    piston_graphics::run(w_s, game).map_err(|e| e.into())
+    piston_graphics::run(window_size, game).map_err(|e| e.into())
 }
 
 #[cfg(feature = "graphics-pixels")]
-pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
@@ -327,7 +326,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(self, window_size: (u16, u16)) -> Result<(), GError> {
+    pub fn run(self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_ggez(self, window_size)
     }
 }
@@ -338,7 +337,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_piston(self, window_size)
     }
 }
@@ -349,7 +348,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_pixels(self, window_size)
     }
 }

@@ -8,7 +8,7 @@ use ggez::{Context, ContextBuilder, GameResult};
 
 use crate::{ColoredDataType, GError, Game, RuleSet};
 
-pub fn run<R: 'static>(window_size: (u16, u16), game: Game<R>) -> Result<(), GError>
+pub fn run<R: 'static>(window_size: (u32, u32), game: Game<R>) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,

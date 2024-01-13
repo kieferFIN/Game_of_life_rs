@@ -6,7 +6,7 @@ use piston::{
     Button, ButtonEvent, ButtonState, EventSettings, Events, Key, RenderEvent, UpdateEvent,
     WindowSettings,
 };
-use std::{collections::VecDeque, error::Error, time::Instant};
+use std::{collections::VecDeque, time::Instant};
 
 use thiserror::Error;
 

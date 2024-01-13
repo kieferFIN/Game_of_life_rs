@@ -11,7 +11,7 @@ use crate::error_handling::GError::PixelsError;
 use crate::GError::WinitError;
 use crate::{ColoredDataType, GError, Game, RuleSet};
 
-pub fn run<R>(window_size: (u16, u16), game: &mut Game<R>) -> Result<(), GError>
+pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
