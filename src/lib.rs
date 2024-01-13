@@ -270,7 +270,8 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    piston_graphics::run(window_size, game).map_err(|e| e.into())
+    let w_s = (window_size.0 as u32, window_size.1 as u32);
+    piston_graphics::run(w_s, game).map_err(|e| e.into())
 }
 
 #[cfg(feature = "graphics-pixels")]
