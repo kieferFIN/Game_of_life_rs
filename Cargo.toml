@@ -15,7 +15,7 @@ pistoncore-glutin_window = { version = "0.72", optional = true }
 piston2d-opengl_graphics = { version = "0.83", optional = true }
 image = { version = "0.24", optional = true }
 pixels = { version = "0.13", optional = true }
-winit = { version = "0.29", optional = true }
+winit = { version = "0.29", optional = true, features = ["rwh_05"] }
 winit_input_helper = { version = "0.15", optional = true }
 rhai = { version = "1.4", optional = true, features = [
     "sync",
