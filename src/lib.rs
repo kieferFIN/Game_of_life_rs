@@ -284,7 +284,7 @@ where
 }
 
 #[cfg(feature = "graphics-sfml")]
-pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u16, u16)) -> Result<(), GError>
+pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
@@ -360,7 +360,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u16, u16)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
         run_with_sfml(self, window_size)
     }
 }

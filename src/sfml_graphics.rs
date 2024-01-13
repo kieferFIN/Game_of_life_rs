@@ -1,12 +1,14 @@
-use std::time::Instant;
-use sfml::graphics::{Color, Font, RenderTarget, RenderWindow, Sprite, Texture, Text, View};
+use crate::{ColoredDataType, Game, RuleSet};
+use sfml::graphics::{Color, Font, RenderTarget, RenderWindow, Sprite, Text, Texture, View};
 use sfml::system::Vector2f;
 use sfml::window::{ContextSettings, Event, Key, Style};
-use crate::{ColoredDataType, Game, RuleSet};
+use std::time::Instant;
 
 pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>)
-    where R: RuleSet,
-          R::Data: ColoredDataType {
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
     let width = game.grid.width;
     let height = game.grid.height;
     let area: Vector2f = (width as f32, height as f32).into();
@@ -17,7 +19,8 @@ pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>)
     let ctx_settings = ContextSettings::default();
     let mut window = RenderWindow::new(window_size, "GOL", Style::CLOSE, &ctx_settings);
     window.set_framerate_limit(60);
-    let mut texture = Texture::new(width as u32, height as u32).unwrap();
+    let mut texture = Texture::new().unwrap();
+    texture.create(width as u32, height as u32);
     let view = View::new(area * 0.5, area);
     window.set_view(&view);
     let mut is_playing = false;
@@ -27,9 +30,11 @@ pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>)
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return,
-                Event::KeyPressed { code: Key::SPACE, .. } => is_playing ^= true,
+                Event::KeyPressed {
+                    code: Key::Space, ..
+                } => is_playing ^= true,
                 Event::KeyPressed { code: Key::F, .. } => show_fps ^= true,
-                _ => ()
+                _ => (),
             }
         }
         if is_playing {
@@ -39,7 +44,13 @@ pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>)
         let fps = 1.0 / (curr_time - prev_time).as_secs_f32();
         prev_time = curr_time;
         unsafe {
-            texture.update_from_pixels(&*game.to_raw_colors(), game.grid.width as u32, game.grid.height as u32, 0, 0);
+            texture.update_from_pixels(
+                &*game.to_raw_colors(),
+                game.grid.width as u32,
+                game.grid.height as u32,
+                0,
+                0,
+            );
         }
         let sprite = Sprite::with_texture(&texture);
 
