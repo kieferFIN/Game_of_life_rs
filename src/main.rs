@@ -12,6 +12,9 @@ use rgb::RGBRules;
 #[cfg(feature = "graphics-terminal")]
 type BackEnd = game_of_life::backends::TerminalBackend;
 
+#[cfg(feature = "graphics-sfml")]
+type BackEnd = game_of_life::backends::SfmlBackend;
+
 fn main() -> GResult<()> {
     //use game_of_life::RandomInit;
 

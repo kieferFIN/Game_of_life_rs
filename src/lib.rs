@@ -322,17 +322,6 @@ where
     }
 }
 
-#[cfg(feature = "graphics-sfml")]
-impl<R> Game<R>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    pub fn run(&mut self, window_size: (u32, u32)) -> GResult<()> {
-        run_with_sfml(self, window_size)
-    }
-}
-
 pub struct GameIter<'a, D> {
     coord: CoordIter,
     data: &'a [D],

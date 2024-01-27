@@ -31,7 +31,6 @@ pub enum GError {
     },
     #[cfg(feature = "graphics-terminal")]
     #[error("Something went wrong in terminal")]
-    //#[error(transparent)]
     TerminalError(#[from] std::io::Error),
 }
 
