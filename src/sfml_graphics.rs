@@ -3,8 +3,9 @@ use sfml::graphics::{Color, Font, RenderTarget, RenderWindow, Sprite, Text, Text
 use sfml::system::Vector2f;
 use sfml::window::{ContextSettings, Event, Key, Style};
 use std::time::Instant;
+use thiserror::Error;
 
-pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>)
+pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), SfmlError>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
@@ -12,14 +13,16 @@ where
     let size = game.get_size();
     let area: Vector2f = (size.width as f32, size.height as f32).into();
 
-    let font = Font::from_file("sansation.ttf").unwrap();
+    let font = Font::from_file("sansation.ttf").ok_or("Font-file not found")?;
     let mut fps_text = Text::default();
     fps_text.set_font(&font);
     let ctx_settings = ContextSettings::default();
     let mut window = RenderWindow::new(window_size, "GOL", Style::CLOSE, &ctx_settings);
     window.set_framerate_limit(60);
-    let mut texture = Texture::new().unwrap();
-    texture.create(size.width as u32, size.height as u32);
+    let mut texture = Texture::new().ok_or("New texture can not be created")?;
+    if !texture.create(size.width as u32, size.height as u32) {
+        return Err("Texture can not be created".into());
+    };
     let view = View::new(area * 0.5, area);
     window.set_view(&view);
     let mut is_playing = false;
@@ -28,7 +31,7 @@ where
     loop {
         while let Some(event) = window.poll_event() {
             match event {
-                Event::Closed => return,
+                Event::Closed => return Ok(()),
                 Event::KeyPressed {
                     code: Key::Space, ..
                 } => is_playing ^= true,
@@ -55,5 +58,15 @@ where
             window.draw(&fps_text);
         }
         window.display();
+    }
+}
+
+#[derive(Error, Debug)]
+#[error("Pixels  error: {0}")]
+pub struct SfmlError(String);
+
+impl From<&str> for SfmlError {
+    fn from(value: &str) -> Self {
+        Self(value.to_string())
     }
 }

@@ -47,11 +47,10 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    type ErrorType = GError;
+    type ErrorType = crate::sfml_graphics::SfmlError;
 
     fn run(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), Self::ErrorType> {
-        crate::sfml_graphics::run(window_size, game);
-        Ok(())
+        crate::sfml_graphics::run(window_size, game)
     }
 }
 

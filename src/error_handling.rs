@@ -1,13 +1,4 @@
-#[cfg(feature = "graphics-pixels")]
-use crate::pixels_graphics::PixelsError;
-#[cfg(feature = "ggez")]
-use ggez::GameError;
-#[cfg(feature = "scripting")]
-use rhai::EvalAltResult;
 use thiserror::Error;
-
-#[cfg(feature = "piston")]
-use crate::piston_graphics::PistonError;
 
 #[derive(Error, Debug)]
 pub enum GError {
@@ -15,13 +6,16 @@ pub enum GError {
     InitializationError { size: usize, width: u16 },
     #[cfg(feature = "graphics-ggez")]
     #[error("Something bad happened in Ggez")]
-    GgezError(#[from] GameError),
+    GgezError(#[from] ggez::GameError),
     #[cfg(feature = "graphics-piston")]
     #[error("Something bad happened in Piston")]
-    PistonError(#[from] PistonError),
+    PistonError(#[from] crate::piston_graphics::PistonError),
     #[cfg(feature = "graphics-pixels")]
     #[error("Something bad happened in Pixels")]
-    PixelsError(#[from] PixelsError),
+    PixelsError(#[from] crate::pixels_graphics::PixelsError),
+    #[cfg(feature = "graphics-sfml")]
+    #[error("Something bad happened in SFML")]
+    SfmlError(#[from] crate::sfml_graphics::SfmlError),
     #[cfg(feature = "scripting")]
     #[error("Something bad happened in script")]
     ScriptError {
