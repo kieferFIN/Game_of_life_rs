@@ -30,11 +30,8 @@ where
     let mut pixels = {
         let window_size = window.inner_size();
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        Pixels::new(
-            game.grid.width as u32,
-            game.grid.height as u32,
-            surface_texture,
-        )?
+        let size = game.get_size();
+        Pixels::new(size.width as u32, size.height as u32, surface_texture)?
     };
     let mut is_paused = true;
     let mut possible_error = None;
@@ -44,7 +41,7 @@ where
             event: WindowEvent::RedrawRequested,
             ..
         } => {
-            pixels.frame_mut().copy_from_slice(&game.to_raw_colors());
+            pixels.frame_mut().copy_from_slice(&game.to_raw_colors().0);
             let error = pixels.render().err();
             if error.is_some() {
                 possible_error = error.map(|e| e.into());

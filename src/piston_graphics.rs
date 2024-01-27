@@ -90,12 +90,9 @@ where
     R::Data: ColoredDataType,
 {
     fn to_rgba(&self) -> Result<RgbaImage, PistonError> {
-        RgbaImage::from_raw(
-            self.grid.width as u32,
-            self.grid.height as u32,
-            self.to_raw_colors(),
-        )
-        .ok_or("Cannot create image".to_string().into())
+        let (data, size) = self.to_raw_colors();
+        RgbaImage::from_raw(size.width as u32, size.height as u32, data)
+            .ok_or("Cannot create image".to_string().into())
     }
 }
 

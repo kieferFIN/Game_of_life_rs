@@ -41,7 +41,8 @@ where
     R: RuleSet,
 {
     fn new(game: Game<R>) -> MyEventHandler<R> {
-        let coords = Rect::new_i32(0, 0, game.grid.width as i32, game.grid.height as i32);
+        let size = game.get_size();
+        let coords = Rect::new_i32(0, 0, size.width as i32, size.height as i32);
         MyEventHandler {
             game,
             fps: graphics::Text::new(""),
@@ -69,12 +70,13 @@ where
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let (data, size) = self.game.to_raw_colors();
         let img = Image::from_pixels(
             ctx,
-            &self.game.to_raw_colors(),
+            &data,
             ImageFormat::Rgba8Unorm,
-            self.game.grid.width as u32,
-            self.game.grid.height as u32,
+            size.width as u32,
+            size.height as u32,
         );
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
         canvas.set_screen_coordinates(self.screen_coords);

@@ -102,7 +102,7 @@ where
     R::Data: ColoredDataType,
 {
     let (_, h) = size()?;
-    if h < game.grid.height {
+    if h < game.get_size().height {
         double_draw(game, out)
     } else {
         simple_draw(game, out)
@@ -120,8 +120,9 @@ where
         .queue(SetBackgroundColor(top_color))?
         .flush()?;
 
-    for y_half in 0..game.grid.height as i32 / 2 {
-        for x in 0..game.grid.width as i32 {
+    let size = game.get_size();
+    for y_half in 0..size.height as i32 / 2 {
+        for x in 0..size.width as i32 {
             let tc = game[(x, y_half * 2)].get_color().to();
             let bc = game[(x, y_half * 2 + 1)].get_color().to();
 
@@ -159,7 +160,7 @@ where
             out.queue(&SetBackgroundColor(current_color))?;
         }
         out.queue(Print(' '))?;
-        if game.grid.width as i32 == i.0 + 1 {
+        if game.get_size().width as i32 == i.0 + 1 {
             out.queue(MoveToNextLine(1))?;
         }
     }

@@ -9,9 +9,8 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    let width = game.grid.width;
-    let height = game.grid.height;
-    let area: Vector2f = (width as f32, height as f32).into();
+    let size = game.get_size();
+    let area: Vector2f = (size.width as f32, size.height as f32).into();
 
     let font = Font::from_file("sansation.ttf").unwrap();
     let mut fps_text = Text::default();
@@ -20,7 +19,7 @@ where
     let mut window = RenderWindow::new(window_size, "GOL", Style::CLOSE, &ctx_settings);
     window.set_framerate_limit(60);
     let mut texture = Texture::new().unwrap();
-    texture.create(width as u32, height as u32);
+    texture.create(size.width as u32, size.height as u32);
     let view = View::new(area * 0.5, area);
     window.set_view(&view);
     let mut is_playing = false;
@@ -43,14 +42,9 @@ where
         let curr_time = Instant::now();
         let fps = 1.0 / (curr_time - prev_time).as_secs_f32();
         prev_time = curr_time;
+        let (data, size) = game.to_raw_colors();
         unsafe {
-            texture.update_from_pixels(
-                &*game.to_raw_colors(),
-                game.grid.width as u32,
-                game.grid.height as u32,
-                0,
-                0,
-            );
+            texture.update_from_pixels(&*data, size.width as u32, size.height as u32, 0, 0);
         }
         let sprite = Sprite::with_texture(&texture);
 
