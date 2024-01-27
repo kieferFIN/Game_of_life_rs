@@ -21,6 +21,9 @@ type BackEnd = game_of_life::backends::PixelsBackend;
 #[cfg(feature = "graphics-ggez")]
 type BackEnd = game_of_life::backends::GgezBackend;
 
+#[cfg(feature = "graphics-piston")]
+type BackEnd = game_of_life::backends::PistonBackend;
+
 fn main() -> GResult<()> {
     //use game_of_life::RandomInit;
 

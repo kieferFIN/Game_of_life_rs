@@ -1,3 +1,4 @@
+use crate::{ColoredDataType, Game, RuleSet};
 use glutin_window::GlutinWindow;
 use graphics::{Image, Text};
 use image::RgbaImage;
@@ -7,16 +8,7 @@ use piston::{
     WindowSettings,
 };
 use std::{collections::VecDeque, time::Instant};
-
 use thiserror::Error;
-
-use crate::{ColoredDataType, Game, RuleSet};
-
-#[derive(Error, Debug)]
-#[error("Piston  error: {msg}")]
-pub struct PistonError {
-    msg: String,
-}
 
 pub fn run<R>(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), PistonError>
 where
@@ -26,8 +18,7 @@ where
     let mut window: GlutinWindow = WindowSettings::new("Game", window_size)
         .exit_on_esc(true)
         .resizable(false)
-        .build()
-        .map_err(|e| PistonError { msg: e.to_string() })?;
+        .build()?;
 
     let mut gl_graph = GlGraphics::new(OpenGL::V3_3);
 
@@ -37,8 +28,7 @@ where
         .convert_gamma(false)
         .filter(Filter::Nearest);
     let text = Text::new_color([1.0, 0.0, 0.0, 1.0], 24);
-    let ref mut glyphs = GlyphCache::new("sansation.ttf", (), texture_settings)
-        .map_err(|e| PistonError { msg: e.to_string() })?;
+    let ref mut glyphs = GlyphCache::new("sansation.ttf", (), texture_settings)?;
 
     let mut pause = true;
     let mut show_fps = false;
@@ -60,11 +50,10 @@ where
                         &c.draw_state,
                         c.transform,
                         gl,
-                    )
-                    .map_err(|e| PistonError { msg: e.to_string() })?;
+                    )?;
                 }
 
-                Ok(())
+                Ok::<(), PistonError>(())
             })?;
         };
         if let Some(_) = e.update_args() {
@@ -106,9 +95,7 @@ where
             self.grid.height as u32,
             self.to_raw_colors(),
         )
-        .ok_or(PistonError {
-            msg: "Cannot create image".to_string(),
-        })
+        .ok_or("Cannot create image".to_string().into())
     }
 }
 
@@ -136,9 +123,18 @@ impl FpsCounter {
         self.samples.len()
     }
 }
+#[derive(Error, Debug)]
+#[error("Piston  error: {0}")]
+pub struct PistonError(#[from] Box<dyn std::error::Error>);
 
-// impl<E: ToString> From<E> for PistonError {
-//     fn from(e: E) -> Self {
-//         PistonError { msg: e.to_string() }
-//     }
-// }
+impl From<std::io::Error> for PistonError {
+    fn from(value: std::io::Error) -> Self {
+        PistonError(Box::new(value))
+    }
+}
+
+impl From<String> for PistonError {
+    fn from(value: String) -> Self {
+        PistonError(value.into())
+    }
+}

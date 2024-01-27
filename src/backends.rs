@@ -86,3 +86,19 @@ where
         crate::ggez_graphics::run(window_size, game)
     }
 }
+
+#[cfg(feature = "graphics-piston")]
+pub struct PistonBackend {}
+
+#[cfg(feature = "graphics-piston")]
+impl<R> Backend<R> for PistonBackend
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    type ErrorType = crate::piston_graphics::PistonError;
+
+    fn run(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), Self::ErrorType> {
+        crate::piston_graphics::run(window_size, game)
+    }
+}
