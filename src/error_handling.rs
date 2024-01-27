@@ -1,3 +1,5 @@
+#[cfg(feature = "graphics-pixels")]
+use crate::pixels_graphics::PixelsError;
 #[cfg(feature = "ggez")]
 use ggez::GameError;
 #[cfg(feature = "scripting")]
@@ -19,10 +21,7 @@ pub enum GError {
     PistonError(#[from] PistonError),
     #[cfg(feature = "graphics-pixels")]
     #[error("Something bad happened in Pixels")]
-    PixelsError { source: anyhow::Error },
-    #[cfg(feature = "graphics-pixels")]
-    #[error("Something bad happened in Winit")]
-    WinitError { source: anyhow::Error },
+    PixelsError(#[from] PixelsError),
     #[cfg(feature = "scripting")]
     #[error("Something bad happened in script")]
     ScriptError {

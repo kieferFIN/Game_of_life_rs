@@ -15,6 +15,9 @@ type BackEnd = game_of_life::backends::TerminalBackend;
 #[cfg(feature = "graphics-sfml")]
 type BackEnd = game_of_life::backends::SfmlBackend;
 
+#[cfg(feature = "graphics-pixels")]
+type BackEnd = game_of_life::backends::PixelsBackend;
+
 fn main() -> GResult<()> {
     //use game_of_life::RandomInit;
 

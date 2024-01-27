@@ -45,3 +45,19 @@ where
         Ok(())
     }
 }
+
+#[cfg(feature = "graphics-pixels")]
+pub struct PixelsBackend {}
+
+#[cfg(feature = "graphics-pixels")]
+impl<R> Backend<R> for PixelsBackend
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    type ErrorType = crate::pixels_graphics::PixelsError;
+
+    fn run(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), Self::ErrorType> {
+        crate::pixels_graphics::run(window_size, game)
+    }
+}
