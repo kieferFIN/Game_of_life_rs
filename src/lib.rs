@@ -4,7 +4,7 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
 
-use backends::Backend;
+use backends::{Backend, BackendStatic};
 
 pub use crate::error_handling::GError;
 pub use crate::error_handling::GResult;
@@ -287,16 +287,8 @@ where
     pub fn run<B: Backend<R>>(&mut self, window_size: (u32, u32)) -> GResult<()> {
         B::run(window_size, self).map_err(|e| e.into())
     }
-}
-
-#[cfg(feature = "graphics-ggez")]
-impl<R> Game<R>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    pub fn run(self, window_size: (u32, u32)) -> GResult<()> {
-        run_with_ggez(self, window_size)
+    pub fn run_owned<B: BackendStatic<R>>(self, window_size: (u32, u32)) -> GResult<()> {
+        B::run(window_size, self).map_err(|e| e.into())
     }
 }
 

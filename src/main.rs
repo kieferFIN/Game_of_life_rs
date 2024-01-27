@@ -18,6 +18,9 @@ type BackEnd = game_of_life::backends::SfmlBackend;
 #[cfg(feature = "graphics-pixels")]
 type BackEnd = game_of_life::backends::PixelsBackend;
 
+#[cfg(feature = "graphics-ggez")]
+type BackEnd = game_of_life::backends::GgezBackend;
+
 fn main() -> GResult<()> {
     //use game_of_life::RandomInit;
 
@@ -31,5 +34,11 @@ fn main() -> GResult<()> {
 
     let mut game: Game<ConwayWithHistory> = Game::init_random_data(SIZE)?;
 
-    game.run::<BackEnd>((WIDTH as u32 * 4, HEIGHT as u32 * 4))
+    #[cfg(not(feature = "graphics-ggez"))]
+    let return_value = game.run::<BackEnd>((WIDTH as u32 * 4, HEIGHT as u32 * 4));
+
+    #[cfg(feature = "graphics-ggez")]
+    let return_value = game.run_owned::<BackEnd>((WIDTH as u32 * 4, HEIGHT as u32 * 4));
+
+    return_value
 }

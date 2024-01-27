@@ -9,6 +9,15 @@ where
     fn run(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), Self::ErrorType>;
 }
 
+pub trait BackendStatic<R>
+where
+    R: RuleSet,
+    R::Data: DataType,
+{
+    type ErrorType: Into<GError>;
+    fn run(window_size: (u32, u32), game: Game<R>) -> Result<(), Self::ErrorType>;
+}
+
 #[cfg(feature = "graphics-terminal")]
 pub struct TerminalBackend {}
 
@@ -59,5 +68,21 @@ where
 
     fn run(window_size: (u32, u32), game: &mut Game<R>) -> Result<(), Self::ErrorType> {
         crate::pixels_graphics::run(window_size, game)
+    }
+}
+
+#[cfg(feature = "graphics-ggez")]
+pub struct GgezBackend {}
+
+#[cfg(feature = "graphics-ggez")]
+impl<R> BackendStatic<R> for GgezBackend
+where
+    R: RuleSet,
+    R::Data: ColoredDataType,
+{
+    type ErrorType = ggez::error::GameError;
+
+    fn run(window_size: (u32, u32), game: Game<R>) -> Result<(), Self::ErrorType> {
+        crate::ggez_graphics::run(window_size, game)
     }
 }

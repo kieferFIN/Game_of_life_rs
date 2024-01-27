@@ -6,9 +6,9 @@ use ggez::graphics::{Color, DrawParam, Image, ImageFormat, Rect, Sampler};
 use ggez::input::keyboard::{KeyCode, KeyInput};
 use ggez::{Context, ContextBuilder, GameResult};
 
-use crate::{ColoredDataType, GError, Game, RuleSet};
+use crate::{ColoredDataType, Game, RuleSet};
 
-pub fn run<R: 'static>(window_size: (u32, u32), game: Game<R>) -> Result<(), GError>
+pub fn run<R: 'static>(window_size: (u32, u32), game: Game<R>) -> GameResult<()>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
@@ -21,7 +21,7 @@ where
         })
         .build()
         .unwrap();
-    let handler = MyEventHandler::<R>::new(game).unwrap();
+    let handler = MyEventHandler::<R>::new(game);
     ggez_run(ctx, event_loop, handler);
 }
 
@@ -40,15 +40,15 @@ impl<R> MyEventHandler<R>
 where
     R: RuleSet,
 {
-    fn new(game: Game<R>) -> GameResult<MyEventHandler<R>> {
+    fn new(game: Game<R>) -> MyEventHandler<R> {
         let coords = Rect::new_i32(0, 0, game.grid.width as i32, game.grid.height as i32);
-        Ok(MyEventHandler {
+        MyEventHandler {
             game,
             fps: graphics::Text::new(""),
             is_pause: true,
             show_fps: false,
             screen_coords: coords,
-        })
+        }
     }
 }
 
