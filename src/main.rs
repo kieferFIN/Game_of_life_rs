@@ -2,16 +2,17 @@ mod conway_rules;
 mod heat_rules;
 mod rgb;
 
-use anyhow::{Context, Result};
-
 use conway_rules::{BoolData, ClassicConway, ConwayColors, ConwayWithHistory};
-use game_of_life::Game;
+use game_of_life::{GResult, Game};
 use heat_rules::HeatRules;
 use rgb::RGBRules;
 
 //**************************************************************
 
-fn main() -> Result<()> {
+#[cfg(feature = "graphics-terminal")]
+type BackEnd = game_of_life::backends::TerminalBackend;
+
+fn main() -> GResult<()> {
     //use game_of_life::RandomInit;
 
     const WIDTH: u16 = 320;
@@ -22,9 +23,7 @@ fn main() -> Result<()> {
 
     //let mut game: Game<ClassicConway>  = Game::init_with_data(v,333).context("Data is wrong size")?;
 
-    let mut game: Game<ConwayWithHistory> =
-        Game::init_random_data(SIZE).context("Data is wrong size")?;
+    let mut game: Game<ConwayWithHistory> = Game::init_random_data(SIZE)?;
 
-    game.run((WIDTH as u32 * 4, HEIGHT as u32 * 4))
-        .context("Error when running the game")
+    game.run::<BackEnd>((WIDTH as u32 * 4, HEIGHT as u32 * 4))
 }

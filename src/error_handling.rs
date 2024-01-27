@@ -32,5 +32,7 @@ pub enum GError {
     #[cfg(feature = "graphics-terminal")]
     #[error("Something went wrong in terminal")]
     //#[error(transparent)]
-    TerminalError { source: anyhow::Error },
+    TerminalError(#[from] std::io::Error),
 }
+
+pub type GResult<T> = Result<T, GError>;

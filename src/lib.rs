@@ -4,7 +4,10 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 use std::thread;
 
+use backends::Backend;
+
 pub use crate::error_handling::GError;
+pub use crate::error_handling::GResult;
 pub use crate::timer::Timer;
 
 mod error_handling;
@@ -27,6 +30,8 @@ mod sfml_graphics;
 
 #[cfg(feature = "graphics-terminal")]
 mod terminal_graphics;
+
+pub mod backends;
 
 type IndexType = (i32, i32);
 
@@ -60,7 +65,7 @@ struct Grid<D> {
 }
 
 impl<D: DataType> Grid<D> {
-    pub fn init_with_data(init_data: Vec<D>, width: u16) -> Result<Grid<D>, GError> {
+    pub fn init_with_data(init_data: Vec<D>, width: u16) -> GResult<Grid<D>> {
         let size = init_data.len();
         let uw = width as usize;
         if size % uw != 0 {
@@ -171,7 +176,7 @@ impl<R> Game<R>
 where
     R: RuleSet,
 {
-    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
+    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> GResult<Game<R>> {
         Grid::init_with_data(init_data, width).map(|grid| Game { grid })
     }
 
@@ -225,7 +230,7 @@ where
 
 /*impl<R> Game<R>
     where R: InitRuleSet {
-    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> Result<Game<R>, GError> {
+    pub fn init_with_data(init_data: Vec<R::Data>, width: u16) -> GResult<Game<R>> {
         Grid::init_with_data(init_data, width).map(|grid| Game { grid, rules: R::init() })
     }
 }*/
@@ -235,7 +240,7 @@ where
     R: RuleSet,
     R::Data: RandomInit,
 {
-    pub fn init_random_data(game_size: (u16, u16)) -> Result<Game<R>, GError> {
+    pub fn init_random_data(game_size: (u16, u16)) -> GResult<Game<R>> {
         let total_size = game_size.0 as usize * game_size.1 as usize;
         let mut data = Vec::with_capacity(total_size);
         for _ in 0..total_size {
@@ -253,53 +258,6 @@ where
     pub fn print(&self) {
         self.grid.print();
     }
-}
-
-#[cfg(feature = "graphics-ggez")]
-pub fn run_with_ggez<R: 'static>(game: Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    ggez_graphics::run(window_size, game)
-}
-
-#[cfg(feature = "graphics-piston")]
-pub fn run_with_piston<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    piston_graphics::run(window_size, game).map_err(|e| e.into())
-}
-
-#[cfg(feature = "graphics-pixels")]
-pub fn run_with_pixels<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    pixels_graphics::run(window_size, game)
-}
-
-#[cfg(feature = "graphics-sfml")]
-pub fn run_with_sfml<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    sfml_graphics::run(window_size, game);
-    Ok(())
-}
-
-#[cfg(feature = "graphics-terminal")]
-pub fn run_in_terminal<R>(game: &mut Game<R>, window_size: (u32, u32)) -> Result<(), GError>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    let w_s = (window_size.0 as u16, window_size.1 as u16);
-    terminal_graphics::run(w_s, game).map_err(|e| GError::TerminalError { source: e.into() })
 }
 
 impl<R> Game<R>
@@ -321,13 +279,23 @@ where
     }
 }
 
+impl<R> Game<R>
+where
+    R: RuleSet,
+    R::Data: DataType,
+{
+    pub fn run<B: Backend<R>>(&mut self, window_size: (u32, u32)) -> GResult<()> {
+        B::run(window_size, self).map_err(|e| e.into())
+    }
+}
+
 #[cfg(feature = "graphics-ggez")]
 impl<R> Game<R>
 where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(self, window_size: (u32, u32)) -> Result<(), GError> {
+    pub fn run(self, window_size: (u32, u32)) -> GResult<()> {
         run_with_ggez(self, window_size)
     }
 }
@@ -338,7 +306,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> GResult<()> {
         run_with_piston(self, window_size)
     }
 }
@@ -349,7 +317,7 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> GResult<()> {
         run_with_pixels(self, window_size)
     }
 }
@@ -360,19 +328,8 @@ where
     R: RuleSet,
     R::Data: ColoredDataType,
 {
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
+    pub fn run(&mut self, window_size: (u32, u32)) -> GResult<()> {
         run_with_sfml(self, window_size)
-    }
-}
-
-#[cfg(feature = "graphics-terminal")]
-impl<R> Game<R>
-where
-    R: RuleSet,
-    R::Data: ColoredDataType,
-{
-    pub fn run(&mut self, window_size: (u32, u32)) -> Result<(), GError> {
-        run_in_terminal(self, window_size)
     }
 }
 
